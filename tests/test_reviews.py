@@ -168,7 +168,10 @@ def test_ambiguous_price_is_unknown(client, site):
 
 def test_bad_selection_rejected(client, site):
     rv = review(client, site + "/checkout")
-    assert client.patch(f"/api/reviews/{rv['id']}/selections", json={"selections": {"c99": True}}).status_code == 422
+    base = f"/api/reviews/{rv['id']}"
+    ins = by_label(rv, "insurance")["id"]
+    assert client.patch(base + "/selections", json={"selections": {ins: False, "c99": True}}).status_code == 422
+    assert client.get(base).json()["selections"] == rv["selections"]
     plan = review(client, site + "/pricing")
     pid = by_label(plan, "Plan")["id"]
     assert client.patch(f"/api/reviews/{plan['id']}/selections", json={"selections": {pid: "nope"}}).status_code == 422
@@ -278,8 +281,14 @@ def test_reminder_preview_ics_and_single_calendar_event(client, site, monkeypatc
     assert "renews automatically" in ev["description"] and ev["start"]["timeZone"] == "America/New_York"
     ics = client.get(prev["ics_url"])
     assert ics.headers["content-type"].startswith("text/calendar") and f"UID:{ev['id']}@coercionguard" in ics.text
+    begin = next(line for line in reminders.to_ics(ev).splitlines() if line.startswith("DTSTART:"))
+    assert begin in ics.text
+    legacy = client.get(f"/api/reviews/{rid}/reminder.ics", params=body)
+    assert legacy.status_code == 200 and f"UID:{ev['id']}@coercionguard" in legacy.text
 
     assert client.post(f"/api/reviews/{rid}/reminder/preview", json={**body, "timezone": "Mars/Base"}).status_code == 422
+    past = {**body, "trial_end_date": (date.today() + timedelta(days=1)).isoformat(), "days_before": 7}
+    assert "has passed" in client.post(f"/api/reviews/{rid}/reminder/preview", json=past).json()["detail"]
     assert client.post(f"/api/reviews/{rid}/reminder/approve", json=body).status_code == 503  # no operator configured
 
     s = get_settings()
@@ -304,13 +313,18 @@ def test_reminder_preview_ics_and_single_calendar_event(client, site, monkeypatc
         assert client.post(f"/api/reviews/{rid}/reminder/approve", json=body,
                            headers={"Authorization": "Bearer wrong"}).status_code == 401
         auth = {"Authorization": "Bearer op-secret"}
-        first = client.post(f"/api/reviews/{rid}/reminder/approve", json=body, headers=auth).json()
-        again = client.post(f"/api/reviews/{rid}/reminder/approve", json=body, headers=auth).json()
+        approval = {"preview_id": prev["preview_id"]}
+        first = client.post(f"/api/reviews/{rid}/reminder/approve", json=approval, headers=auth).json()
+        again = client.post(f"/api/reviews/{rid}/reminder/approve", json=approval, headers=auth).json()
         assert first["status"] == "created" and first["html_link"] and again["status"] == "already_created"
         assert len(events) == 1 and len(posts) == 1  # the retry was reconciled from the receipt
         s.receipts_path = str(tmp_path / "lost.json")  # receipt gone: Google's 409 on the stable ID still prevents a duplicate
         third = client.post(f"/api/reviews/{rid}/reminder/approve", json=body, headers=auth).json()
         assert third["status"] == "already_created" and len(events) == 1
+        assert events[ev["id"]]["start"] == ev["start"]
+        client.post(f"/api/reviews/{rid}/check", json={}).raise_for_status()
+        assert client.get(prev["ics_url"]).status_code == 422
+        assert client.post(f"/api/reviews/{rid}/reminder/approve", json=approval, headers=auth).status_code == 422
     finally:
         s.operator_token = s.google_calendar_id = s.google_service_account_json = ""
 

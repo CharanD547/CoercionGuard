@@ -213,6 +213,10 @@ class ReminderRequest(BaseModel):
     days_before: int = 2
 
 
+class ReminderApproval(BaseModel):
+    preview_id: str = Field(min_length=1, max_length=64)
+
+
 def _review(review_id: str):
     r = store.get(review_id)
     if not r:
@@ -223,7 +227,7 @@ def _review(review_id: str):
 def _with_state(r) -> dict:
     out = r.public(screenshot=False)
     if r.assessment:
-        out["assessment_stale"] = r.assessment["checked_selections"] != r.selections
+        out["assessment_stale"] = r.assessment_stale
     return out
 
 
@@ -282,7 +286,7 @@ async def get_review(review_id: str, screenshot: bool = True):
     r = _review(review_id)
     out = r.public(screenshot=screenshot)
     if r.assessment:
-        out["assessment_stale"] = r.assessment["checked_selections"] != r.selections
+        out["assessment_stale"] = r.assessment_stale
     return out
 
 
@@ -312,7 +316,15 @@ async def check_review(review_id: str, body: CheckRequest, request: Request):
             r.set_selections(body.selections)
         except ValueError as e:
             raise HTTPException(422, str(e))
-    r.assessment = await analyst.assess(r)
+    version = r.selection_version
+    r.reminder_preview = None
+    assessment = await analyst.assess(r)
+    _review(review_id)
+    if version != r.selection_version:
+        raise HTTPException(409, "Choices changed during the assessment. Check them again.")
+    r.assessment = assessment
+    r.checked_version = version
+    r.reminder_preview = None
     return _with_state(r)
 
 
@@ -323,15 +335,23 @@ async def preview_reminder(review_id: str, body: ReminderRequest):
         event = reminders.build_event(r, body.trial_end_date, body.timezone, body.days_before)
     except reminders.ReminderError as e:
         raise HTTPException(422, str(e))
-    return {"event": event, "ics_url": f"/api/reviews/{review_id}/reminder.ics?trial_end_date={body.trial_end_date}"
-            f"&timezone={body.timezone}&days_before={body.days_before}"}
+    preview_id = secrets.token_urlsafe(18)
+    r.reminder_preview = (preview_id, event)
+    return {"event": event, "preview_id": preview_id,
+            "ics_url": f"/api/reviews/{review_id}/reminder.ics?preview_id={preview_id}"}
 
 
 @app.get("/api/reviews/{review_id}/reminder.ics")
-async def reminder_ics(review_id: str, trial_end_date: str, timezone: str, days_before: int = 2):
+async def reminder_ics(review_id: str, trial_end_date: str | None = None, timezone: str | None = None,
+                       days_before: int = 2, preview_id: str | None = None):
     r = _review(review_id)
     try:
-        event = reminders.build_event(r, trial_end_date, timezone, days_before)
+        if preview_id is not None:
+            event = reminders.get_preview(r, preview_id)
+        elif trial_end_date is not None and timezone is not None:
+            event = reminders.build_event(r, trial_end_date, timezone, days_before)
+        else:
+            raise reminders.ReminderError("Provide a preview ID or the trial end date and time zone.")
     except reminders.ReminderError as e:
         raise HTTPException(422, str(e))
     return Response(reminders.to_ics(event), media_type="text/calendar",
@@ -339,7 +359,8 @@ async def reminder_ics(review_id: str, trial_end_date: str, timezone: str, days_
 
 
 @app.post("/api/reviews/{review_id}/reminder/approve")
-async def approve_reminder(review_id: str, body: ReminderRequest, authorization: str = Header(default="")):
+async def approve_reminder(review_id: str, body: ReminderApproval | ReminderRequest,
+                           authorization: str = Header(default="")):
     token = get_settings().operator_token
     if not token:
         raise HTTPException(503, "Calendar approval isn't set up on this server. Download the .ics file instead.")
@@ -347,7 +368,8 @@ async def approve_reminder(review_id: str, body: ReminderRequest, authorization:
         raise HTTPException(401, "Only the demo operator can add events to the team calendar.")
     r = _review(review_id)
     try:
-        event = reminders.build_event(r, body.trial_end_date, body.timezone, body.days_before)
+        event = (reminders.get_preview(r, body.preview_id) if isinstance(body, ReminderApproval)
+                 else reminders.build_event(r, body.trial_end_date, body.timezone, body.days_before))
         return await reminders.approve(event)
     except reminders.ReminderError as e:
         raise HTTPException(422, str(e))

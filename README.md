@@ -102,6 +102,7 @@ Run `.venv\Scripts\python.exe examples/guard_client.py` on Windows to see an ext
 Under **Compare the agents**, use **Test a live page** to paste a public pricing, trial, checkout, or consent page, or upload a saved public copy. Say what you want to avoid and choose a workflow:
 
 - **Try its choices myself** captures the source into a private review. Inspect the evidence, try captured choices, and preview a renewal reminder.
+- For a terms-only capture, choose **Check these terms**. The review shows the captured source and which assessment engine ran.
 - **Run both agents on this page** opens the side-by-side comparison.
 
 The bundled comparisons are also available below the consent lab.

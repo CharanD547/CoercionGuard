@@ -29,7 +29,7 @@ class CalendarUnavailable(RuntimeError):
 
 def build_event(review: Review, trial_end: str, tz_name: str, days_before: int = 2) -> dict:
     follow = (review.assessment or {}).get("follow_up")
-    if not follow or review.assessment.get("checked_selections") != review.selections:
+    if not follow or review.assessment_stale:
         raise ReminderError("Check the choices first. A reminder is offered only when the page's renewal terms are cited.")
     try:
         tz = ZoneInfo(tz_name)
@@ -41,13 +41,13 @@ def build_event(review: Review, trial_end: str, tz_name: str, days_before: int =
         raise ReminderError("Give the trial end date as YYYY-MM-DD.")
     if not 0 <= days_before <= 30:
         raise ReminderError("Remind between 0 and 30 days before the trial ends.")
-    today = datetime.now(tz).date()
-    if end < today:
+    now = datetime.now(tz)
+    if end < now.date():
         raise ReminderError("That trial end date has already passed.")
-    remind_on = max(end - timedelta(days=days_before), today)
+    remind_on = end - timedelta(days=days_before)
     start = datetime.combine(remind_on, dtime(9, 0), tz)
-    if start <= datetime.now(tz):
-        start = (datetime.now(tz) + timedelta(minutes=30)).replace(second=0, microsecond=0)
+    if start <= now:
+        raise ReminderError("That reminder time has passed. Choose a shorter lead time or check the trial end date.")
 
     page = review.capture["url"]
     parts = urlsplit(page)
@@ -73,6 +73,16 @@ def build_event(review: Review, trial_end: str, tz_name: str, days_before: int =
         "reminders": {"useDefault": False, "overrides": [{"method": "popup", "minutes": 0}]},
         "source": {"title": "CoercionGuard review", "url": page},
     }
+
+
+def get_preview(review: Review, preview_id: str) -> dict:
+    preview = review.reminder_preview
+    if preview is None or preview[0] != preview_id or review.assessment_stale:
+        raise ReminderError("This reminder preview is no longer current. Preview it again.")
+    event = preview[1]
+    if datetime.fromisoformat(event["start"]["dateTime"]) <= datetime.now(timezone.utc):
+        raise ReminderError("That reminder time has passed. Preview a future reminder.")
+    return event
 
 
 def _ics_text(s: str) -> str:

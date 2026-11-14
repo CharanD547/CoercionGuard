@@ -51,6 +51,13 @@ class Review:
     selections: dict = field(default_factory=dict)
     linked: dict | None = None  # the one extra page the agent may read
     assessment: dict | None = None
+    selection_version: int = 0
+    checked_version: int = -1
+    reminder_preview: tuple[str, dict] | None = None
+
+    @property
+    def assessment_stale(self) -> bool:
+        return self.checked_version != self.selection_version
 
     @property
     def expires_at(self) -> float:
@@ -73,10 +80,16 @@ class Review:
                     raise ValueError(f"{cid} takes true or false")
             elif value not in {o["id"] for o in c["options"]}:
                 raise ValueError(f"{value!r} isn't an option of {cid}")
-            self.selections[cid] = value
+        self._replace_selections({**self.selections, **changes})
+
+    def _replace_selections(self, selections: dict) -> None:
+        if self.selections != selections:
+            self.selections = selections
+            self.selection_version += 1
+            self.reminder_preview = None
 
     def reset(self) -> None:
-        self.selections = dict(self.defaults)
+        self._replace_selections(self.defaults)
 
     def changed(self) -> list[dict]:
         return [c for c in self.capture["controls"] if self.selections.get(c["id"]) != c["default"]]

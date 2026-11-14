@@ -141,7 +141,7 @@ def rules_assess(review: Review) -> dict:
 
     issues = [c["issue"] for c in conflicts]
     if not conflicts:
-        rec = "Your current choices fit your goal on this page."
+        rec = "The captured terms did not show a conflict with your goal."
     else:
         rec = "Before you continue: " + " ".join(dict.fromkeys(issues))
     if renewal and want["recurring"]:
@@ -149,7 +149,7 @@ def rules_assess(review: Review) -> dict:
     elif any(c["control_id"] for c in conflicts):
         step = "Untick the flagged choices in this review, then check them again."
     else:
-        step = "Continue on the site with the same choices you made here."
+        step = "Check the final terms on the site before committing."
     trial = TRIAL.search(" ".join(srcs["page"]["lines"]))
     return {"conflicts": conflicts, "recommendation": rec, "next_step": step,
             "renewal": {"detected": bool(renewal), "excerpt": renewal["excerpt"] if renewal else None,
@@ -277,7 +277,9 @@ async def assess(review: Review) -> dict:
         "recommendation": ("The captured terms do not establish the total against your budget."
                            if amount_unclear and not conflicts else
                            " ".join(str(raw.get("recommendation") or "").split())[:600]),
-        "next_step": " ".join(str(raw.get("next_step") or "").split())[:300],
+        "next_step": ("Confirm the missing or unverified terms before committing."
+                      if not conflicts and (unverified or amount_unclear) else
+                      " ".join(str(raw.get("next_step") or "").split())[:300]),
         "follow_up": follow_up,
         "linked_page": review.linked["url"] if review.linked else None,
         "price_change": totals,

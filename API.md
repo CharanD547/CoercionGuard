@@ -119,9 +119,11 @@ Choose the actual trial end date in `YYYY-MM-DD` format, an IANA time zone, and 
 
 | Method and path | Result |
 | --- | --- |
-| `POST /api/reviews/{id}/reminder/preview` | Returns `event` and `ics_url`. Display the event before the user approves it. |
-| `GET /api/reviews/{id}/reminder.ics` | Pass the same fields as query parameters or follow `ics_url`. Returns a `text/calendar` attachment. |
-| `POST /api/reviews/{id}/reminder/approve` | Send the previewed body and operator bearer token. Returns `status` such as `created`, `already_created`, or `restored`, with an event link when available. |
+| `POST /api/reviews/{id}/reminder/preview` | Returns `event`, `preview_id`, and `ics_url`. Display the event before the user approves it. |
+| `GET /api/reviews/{id}/reminder.ics` | Follow `ics_url` for the exact preview or pass the legacy date fields as query parameters. Returns a `text/calendar` attachment. |
+| `POST /api/reviews/{id}/reminder/approve` | Send `{"preview_id":"…"}` and an operator bearer token. The legacy date body is also accepted. Returns `status` such as `created`, `already_created`, or `restored`, with an event link when available. |
+
+Changing selections, rerunning the assessment, or creating a new preview invalidates the preceding preview. A reminder time that has already passed returns `422`. Choose a shorter lead time or correct the trial end date.
 
 Approval can return `401` for an invalid operator token, `404` for an expired review, `422` for invalid reminder details or a stale assessment, and `503` when the calendar integration is unavailable. The same source, date, time zone, and lead time produce a stable event ID for retries.
 
