@@ -160,13 +160,17 @@ html.intro .view-controls,html.intro .hint{display:none}
 footer{padding:18px clamp(16px,3vw,40px) 28px;font-size:13px;color:var(--ink-2);border-top:1px solid var(--rule)}
 
 @media (max-width:900px){
+  .bar{flex-wrap:wrap;row-gap:0}
+  #cases{order:3;flex:1 1 100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible;margin:0 -4px}
+  #cases button{white-space:normal;text-align:center;line-height:1.25;padding:10px 6px 8px}
+  #cases button[aria-pressed=true]{background:#e7ebe8}
   #lab{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "stage" "evidence" "inspect"}
   .stage-slot{min-height:0;height:min(62vw,420px);margin-top:18px}
   .instruction{max-width:none}
 }
 @media (max-width:560px){
-  .bar{gap:10px;flex-wrap:wrap;padding-bottom:0}
-  #cases{order:3;flex-basis:100%;margin:0 -16px;padding:0 6px}
+  .bar{gap:10px;padding-bottom:0}
+  #cases{grid-template-columns:1fr 1fr;margin:0}
   .bar .ghost{margin-left:auto}
   .stage-slot{height:78vw;min-height:300px}
   .ledger{grid-template-columns:1fr 1fr;left:8px;right:8px;bottom:8px;gap:4px 10px}
