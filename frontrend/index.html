@@ -6,17 +6,26 @@
 
 .plate{--depth:8px;--edge:#b9ad90;--reverse:#e3dac2}.plate-back{--edge:#25392f;--reverse:#30463b}.plate-renewal{--edge:#713529;--reverse:#923d2d}
 .edge-face{position:absolute;pointer-events:none;background:var(--edge);display:block}.edge-left,.edge-right{width:var(--depth);height:100%;top:0}.edge-left{left:0;transform-origin:left;transform:rotateY(90deg)}.edge-right{right:0;transform-origin:right;transform:rotateY(-90deg)}.edge-top,.edge-bottom{width:100%;height:var(--depth);left:0}.edge-top{top:0;transform-origin:top;transform:rotateX(-90deg)}.edge-bottom{bottom:0;transform-origin:bottom;transform:rotateX(90deg)}.edge-reverse{inset:0;transform:translateZ(-8px);background:var(--reverse)}
+.intent{padding:15px 19px;background:#dedfd3;border:1px solid var(--line);border-bottom:0}.intent>p:last-child{font-size:21px}.workbench{display:grid;grid-template-columns:1.03fr 1fr;border:1px solid var(--line)}.workbench article{min-width:0;padding:24px}.workbench h3{font:400 clamp(25px,3vw,38px)/1.06 Georgia,serif;letter-spacing:-.05em;margin:4px 0 12px}.workbench article>p:not(.eyebrow){color:var(--muted)}.workbench .result{border-left:1px solid var(--line)}.evidence-label{margin-top:27px}#facts{display:block;margin:0}#facts>div{display:grid;grid-template-columns:1fr minmax(100px,.92fr);align-items:center;gap:8px;border-top:1px solid #d3cbbb;padding:5px 0}#facts button{width:100%;font-weight:700;text-align:left;background:#f2ebdb;overflow-wrap:anywhere}#facts button[aria-pressed=true]{outline:2px solid #756d57;outline-offset:-2px}#facts button[data-state=pause]{background:#f3dacf;color:#722c20;border-color:#be8173}#facts button[data-state=pass]{color:#285344}.inspector{border:1px solid #b9c4b5;background:#f1f2e9;padding:15px;margin:19px 0 10px}.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}.compare div{min-width:0}.compare span,.compare strong{display:block;overflow-wrap:anywhere}.compare span{font-size:12px;color:var(--muted)}.compare strong{margin-top:4px}.compare div+div{border-left:1px solid #bbc7b9;padding-left:12px}#rule-status{margin:12px 0 0;font-size:13px;color:#47574b}#rule-status[data-state=pause]{color:#822d21;font-weight:700}@media(max-width:650px){.workbench{grid-template-columns:1fr}.workbench article{padding:16px}.workbench .result{border-left:0;border-top:1px solid var(--line)}}
+/* The review desk is the first view after the opening. */
+body{background:#e9e6da}header.shell{height:65px;border-color:#b2b3a5}#lab{padding:23px 0 18px;border:0;outline:none}.lab-heading{align-items:end;margin-bottom:17px}.lab-heading h1{font:400 clamp(36px,6vw,75px)/.96 Georgia,serif;letter-spacing:-.074em;margin:0}.lab-heading .eyebrow{color:#54644f}.desk{display:grid;grid-template-columns:168px minmax(0,1fr);border:1px solid #9fa99a;border-radius:12px;overflow:hidden;background:#263a31}.case-rail{padding:20px 11px;background:#263a31;color:#f6eed9}.case-rail .eyebrow{color:#c9d1bd;margin:0 8px 12px}#cases{display:grid;gap:7px}#cases button{text-align:left;border-color:#829083;color:#f4f0df;padding:9px 10px;font-size:13px}#cases [aria-pressed=true]{background:#f0e7d1;color:#29372d;border-color:#f0e7d1}.workspace{min-width:0;background:#f6f0df}.overview{display:grid;grid-template-columns:1fr 1fr;min-height:230px;background:#303e34;color:#f5ecd7;border-bottom:1px solid #768575}.overview .intent{align-self:center;background:none;border:0;padding:24px}.overview .intent .eyebrow{color:#c1ceb4}.overview .intent>p:last-child{font-size:clamp(20px,2.8vw,36px);letter-spacing:-.045em}.overview .exhibit{min-height:230px;background:radial-gradient(ellipse at center,#65715c 0%,transparent 70%)}.overview .object{width:min(58%,205px)}.overview .plate-front strong{font-size:clamp(28px,4vw,53px)}.overview .plate-back strong{font-size:clamp(17px,2.2vw,26px)}.overview .plate-renewal strong{font-size:clamp(15px,2vw,25px)}.overview .plate span{font-size:9px}.overview .plate small{font-size:10px}.workbench{border:0;border-bottom:1px solid #b3bdad}.workbench .receipt{background:#faf4e5}.workbench .result{background:#e2e8da}.workbench article{padding:19px}.workbench h3{font-size:clamp(22px,2.6vw,34px)}.workbench .inspector{margin-bottom:0}.workbench .evidence-label{margin-top:16px}.audit{padding:9px 17px}.audit p{margin:0}#run{margin:0}.workbench .result:has(.pause){box-shadow:inset 0 4px #a34d3d}
+@media(max-width:760px){.desk{grid-template-columns:1fr}.case-rail{padding:10px}.case-rail .eyebrow{display:none}#cases{display:flex}.overview{min-height:170px}.overview .exhibit{min-height:170px}.overview .intent{padding:14px}.overview .object{width:63%}.overview .plate{gap:4px}.overview .plate small{font-size:8px}.overview .plate span{font-size:7px}}
+@media(max-width:400px){.overview .plate-renewal strong{font-size:13px}.overview .plate-front strong{font-size:25px}.overview .plate-back strong{font-size:14px}}
+.overview .plate-front{color:var(--ink)}.overview .plate-renewal{inset:41% -10% -2% 15%}.overview .object{margin-top:-17px}
+.stage-wrap{min-width:0;position:relative;background:#202d26;border-left:1px solid #677464}.stage-wrap .exhibit{height:100%;min-height:250px}.stage-wrap .object{width:min(48%,180px);margin-top:-21px;transform:rotateX(12deg) rotateY(-17deg) rotateZ(-5deg)}.stage-wrap .plate-back{transform:translate3d(-39%,-12%,-32px) rotateZ(-9deg)}.stage-wrap .plate-front{transform:translate3d(22%,4%,31px) rotateZ(5deg)}.stage-wrap .plate-front strong{font-size:clamp(18px,2.4vw,31px);overflow-wrap:anywhere}.stage-wrap .plate-renewal{inset:58% -20% -14% 27%;transform:translate3d(23%,18%,62px) rotateZ(7deg)}.stage-wrap .plate-renewal strong{font-size:clamp(15px,2vw,24px)}.stage-wrap .exhibit[data-term-state=pause] .plate-front{transform:translate3d(17%,-14%,32px) rotateZ(3deg)}.stage-wrap .exhibit[data-term-state=pass] .plate-front{transform:translate3d(27%,2%,31px) rotateZ(4deg)}#stage-caption{position:absolute;inset:auto 0 0;margin:0;padding:8px 10px;background:#202d26;color:#e8ead6;font:11px/1.35 monospace;text-align:center}
+@media(max-width:650px){.overview{grid-template-columns:1fr}.stage-wrap{border-left:0;border-top:1px solid #677464}.stage-wrap .exhibit{min-height:205px}.stage-wrap .object{width:min(41%,153px)}}
 </style></head>
 <body><a class="skip" href="#lab">Skip to lab</a>
 <header class="shell"><a class="brand" href="./">CoercionGuard<span>.</span></a><button id="play-opening" hidden>Replay opening <span aria-hidden="true">↺</span></button></header>
 <main class="shell">
-<section class="hero" aria-labelledby="headline"><div class="copy"><p class="eyebrow">Browser consent lab</p><h1 id="headline">What did you<br><em>agree to?</em></h1><p>Inspect the difference between a proposed browser action and the permission the user gave.</p><a class="primary" href="#lab">Inspect a decision <span aria-hidden="true">↓</span></a></div><div class="exhibit" id="stage" aria-hidden="true"></div></section>
-<section id="lab" tabindex="-1" aria-labelledby="lab-title"><div class="lab-heading"><div><p class="eyebrow">Synthetic cases</p><h2 id="lab-title">The decision trace</h2></div><div id="cases" role="group" aria-label="Choose a case"></div></div>
-<div class="trace">
-<div class="intent"><p class="eyebrow">01 / User instruction</p><p id="intent"></p></div>
-<article class="receipt"><p class="eyebrow">02 / Action proposal</p><h3 id="action"></h3><p id="detail"></p><dl id="facts"></dl><button class="primary" id="run">Check against policy <span aria-hidden="true">→</span></button></article>
-<article class="result"><div class="result-top"><p class="eyebrow">03 / Policy decision</p><span id="badge">READY</span></div><h3 id="verdict">Awaiting evaluation</h3><p id="explanation"></p><ol id="checks"></ol></article>
-</div><div class="audit"><p id="status" role="status">Local evaluation. No browser action is executed.</p><button id="export" disabled>Export decision JSON</button></div></section>
+<section id="lab" tabindex="-1" aria-labelledby="lab-title">
+<div class="lab-heading"><div><p class="eyebrow">Browser consent lab · Illustrative cases</p><h1 id="lab-title">Inspect the consent gap.</h1></div><button class="primary" id="run">Check against policy</button></div>
+<div class="desk"><nav class="case-rail" aria-label="Cases"><p class="eyebrow">Cases</p><div id="cases" role="group" aria-label="Choose a case"></div></nav>
+<div class="workspace"><div class="overview"><div class="intent"><p class="eyebrow">User instruction</p><p id="intent"></p></div><div class="stage-wrap"><div class="exhibit" id="stage" aria-hidden="true"></div><p id="stage-caption"></p></div></div>
+<div class="workbench">
+<article class="receipt"><p class="eyebrow">Action proposal</p><h3 id="action"></h3><p id="detail"></p><p class="eyebrow evidence-label">Select a term to inspect its rule</p><dl id="facts"></dl></article>
+<article class="result"><div class="result-top"><p class="eyebrow">Policy review</p><span id="badge">READY</span></div><h3 id="verdict">Awaiting evaluation</h3><p id="explanation"></p><div class="inspector"><p class="eyebrow" id="rule-name"></p><div class="compare"><div><span>User authorized</span><strong id="allowed"></strong></div><div><span>Proposal requests</span><strong id="requested"></strong></div></div><p id="rule-status" role="status"></p></div></article>
+</div><div class="audit"><p id="status" role="status">Local evaluation. No browser action is executed.</p><button id="export" disabled>Export decision JSON</button></div></div></div></section>
 </main><footer class="shell">CoercionGuard <span>Illustrative inputs · Local policy evaluation</span></footer>
 <dialog id="opening" aria-labelledby="opening-title"><div class="opening-top"><strong>CoercionGuard.</strong><button id="skip-opening">Skip to lab</button></div><div class="opening-copy"><p class="eyebrow">Consent review</p><h2 id="opening-title">The trial is free.<br><em>The renewal isn’t.</em></h2></div><div class="opening-art" id="intro-scene" aria-hidden="true"></div><div class="opening-foot"><p id="chapter">Read the proposed action</p><div class="timeline" aria-hidden="true"></div></div></dialog>
 <template id="sculpture"><div class="object">
@@ -42,7 +51,26 @@ for(const plate of specimen.children){
 }
 stage.append(specimen);
 replay.hidden=motion.matches;
-let deadline, secondBeat;
+let deadline, secondBeat, term;
+function showTerm(){
+  if(!term||dialog.open)return;
+  const back=specimen.querySelector('.plate-back');
+  const front=specimen.querySelector('.plate-front');
+  const finding=specimen.querySelector('.plate-renewal');
+  back.querySelector('span').textContent='AUTHORIZED';
+  back.querySelector('strong').textContent=term.allowed;
+  back.querySelector('small').textContent=term.name;
+  front.querySelector('span').textContent='PROPOSED';
+  front.querySelector('strong').firstChild.textContent=term.requested;
+  front.querySelector('small').hidden=true;
+  finding.querySelector('span').textContent=term.name;
+  finding.querySelector('strong').textContent='Outside scope';
+  finding.querySelector('small').textContent='Pause for user review';
+  finding.hidden=term.state!=='pause';
+  stage.dataset.termState=term.state;
+  document.querySelector('#stage-caption').textContent=term.name+' · '+(term.state==='pause'?'Outside authority':term.state==='pass'?'Within authority':'Awaiting check');
+}
+document.addEventListener('guard-term',event=>{term=event.detail;showTerm()});
 function finish(){
   clearTimeout(deadline);
   clearTimeout(secondBeat);
@@ -50,7 +78,8 @@ function finish(){
   stage.append(specimen);
   setLabels(Number(stage.dataset.case||0));
   specimen.classList.remove('performing');
-  replay.focus({preventScroll:true});
+  showTerm();
+  document.querySelector('#lab').focus({preventScroll:true});
 }
 function play(){
   if(motion.matches||dialog.open)return;
@@ -108,7 +137,47 @@ const fixtures = [
 const $=id=>document.getElementById(id);
 const node=(tag,value)=>Object.assign(document.createElement(tag),{textContent:value});
 const currency=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
-let active=0,report=null;
+let active=0,report=null,selected=0;
+function terms(){
+  const {policy,action}=fixtures[active];
+  const usd=cents=>currency.format(cents/100);
+  const fields=items=>items.join(', ')||'None';
+  return [
+    ['Immediate charge','Up to '+usd(policy.maxCost),usd(action.cost)],
+    ['Recurring billing',policy.recurring?'Allowed':'Excluded',action.recurring?'Auto-renewal':'None'],
+    ['Personal data scope',fields(policy.fields),fields(action.fields)]
+  ];
+}
+function inspect(index){
+  selected=index;
+  const [name,allowed,requested]=terms()[index];
+  const check=report?.checks[index];
+  $('rule-name').textContent=name;
+  $('allowed').textContent=allowed;
+  $('requested').textContent=requested;
+  $('rule-status').textContent=check?(check.pass?'Within scope':'Outside user authority'):'Pending evaluation';
+  $('rule-status').dataset.state=check?(check.pass?'pass':'pause'):'ready';
+  document.dispatchEvent(new CustomEvent('guard-term',{detail:{
+    name,allowed,requested,state:check?(check.pass?'pass':'pause'):'ready'
+  }}));
+
+  [...$('facts').querySelectorAll('button')].forEach((button,i)=>{
+    button.setAttribute('aria-pressed',String(i===index));
+    button.dataset.state=report?(report.checks[i].pass?'pass':'pause'):'ready';
+  });
+}
+function renderTerms(){
+  $('facts').replaceChildren(...terms().map(([name,,requested],i)=>{
+    const row=node('div','');
+    const label=node('dt',name), cell=node('dd',''), button=node('button',requested);
+    button.type='button';
+    button.setAttribute('aria-label','Inspect '+name+': '+requested);
+    button.onclick=()=>inspect(i);
+    cell.append(button);row.append(label,cell);
+    return row;
+  }));
+  inspect(selected);
+}
 function show(index){
   active=index;report=null;
   document.querySelector('#stage').dataset.case=String(index);
@@ -118,11 +187,11 @@ function show(index){
   $('intent').textContent=intent;
   $('action').textContent=action.label;
   $('detail').textContent=action.description;
-  $('facts').replaceChildren(...[['Due now',currency.format(action.cost/100)],['Auto-renewal',action.recurring?'Yes':'No'],['Data requested',action.fields.join(', ')||'None']].flatMap(([k,v])=>[node('dt',k),node('dd',v)]));
+  selected=index===0?1:index===2?2:0;
+  renderTerms();
   $('badge').textContent='READY';$('badge').className='neutral';
   $('verdict').textContent='Awaiting evaluation';
   $('explanation').textContent='Check the proposal to see which permissions it needs.';
-  $('checks').replaceChildren();
   $('status').textContent='Local evaluation. No browser action is executed.';
   $('export').disabled=true;
   [...$('cases').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
@@ -139,9 +208,8 @@ $('run').onclick=()=>{
   $('badge').textContent=pass?'PASS':'PAUSE';$('badge').className=pass?'pass':'pause';
   $('verdict').textContent=pass?'Within user authority':'Pause for user review';
   $('explanation').textContent=pass?'The proposal stays within the stated limits. This evaluation ends here.':'The proposal exceeds the scope the user granted.';
-  $('checks').replaceChildren(...result.checks.map(check=>{
-    const item=node('li',check.name);item.append(node('b',check.pass?'Pass':'Outside scope'));item.dataset.pass=String(check.pass);return item;
-  }));
+  const conflict=result.checks.findIndex(check=>!check.pass);
+  inspect(conflict>=0?conflict:selected);
   $('status').textContent=result.decision+' · No action executed';
   $('export').disabled=false;
   document.dispatchEvent(new CustomEvent('guard-state',{detail:pass?'pass':'pause'}));
