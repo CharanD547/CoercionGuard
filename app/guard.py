@@ -57,8 +57,10 @@ class GuardDecision(GuardModel):
 async def check_action(body: GuardRequest, response: Response) -> GuardDecision:
     """Check authorized limits before executing the exact proposed action."""
     response.headers["Cache-Control"] = "no-store"
-    policy, proposal = body.policy, body.proposal
+    return evaluate_action(body.policy, body.proposal)
 
+
+def evaluate_action(policy: Policy, proposal: Proposal) -> GuardDecision:
     if proposal.immediate_charge_minor is None:
         charge = Finding(key="charge", status="unknown", code="charge_unknown")
     elif proposal.currency is None:

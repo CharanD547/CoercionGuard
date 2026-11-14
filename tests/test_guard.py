@@ -12,6 +12,46 @@ PROPOSAL = {"currency": "USD", "immediate_charge_minor": 4000,
 PATH = "/api/v1/guard/check"
 
 
+def test_mcp_discovers_read_only_tool_and_matches_rest():
+    headers = {"Accept": "application/json, text/event-stream"}
+    cases = [
+        ({"immediate_charge_minor": 4900}, "block", "over_budget"),
+        ({}, "allow", "within_budget"),
+        ({"immediate_charge_minor": 0, "recurring_interval": "monthly"}, "block", "recurrence_disallowed"),
+        ({"data_fields": ["email", "location"]}, "block", "disclosure_disallowed"),
+        ({"immediate_charge_minor": None}, "review_required", "charge_unknown"),
+        ({"currency": "EUR"}, "review_required", "currency_mismatch"),
+        ({"currency": None, "data_fields": ["location"]}, "block", "disclosure_disallowed"),
+    ]
+    with TestClient(app) as client:
+        def request(method, params=None):
+            body = {"jsonrpc": "2.0", "id": 1, "method": method}
+            if params is not None:
+                body["params"] = params
+            return client.post("/mcp", json=body, headers=headers).raise_for_status().json()
+
+        initialized = request("initialize", {
+            "protocolVersion": "2025-06-18", "capabilities": {},
+            "clientInfo": {"name": "guard-test", "version": "1"},
+        })
+        headers["MCP-Protocol-Version"] = initialized["result"]["protocolVersion"]
+        tools = request("tools/list")["result"]["tools"]
+        assert [tool["name"] for tool in tools] == ["evaluate_action"]
+        assert tools[0]["annotations"]["readOnlyHint"] is True
+        for changes, decision, code in cases:
+            payload = {"policy": POLICY, "proposal": {**PROPOSAL, **changes}}
+            result = request("tools/call", {"name": "evaluate_action", "arguments": payload})["result"]
+            assert not result.get("isError")
+            actual = result["structuredContent"]
+            assert actual["decision"] == decision
+            assert code in {check["code"] for check in actual["checks"]}
+            assert actual == client.post(PATH, json=payload).json()
+
+        invalid = {"policy": POLICY, "proposal": {**PROPOSAL, "immediate_charge_minor": "4000"}}
+        result = request("tools/call", {"name": "evaluate_action", "arguments": invalid})["result"]
+        assert result["isError"]
+
+
 @pytest.mark.parametrize("changes,decision,code", [
     ({}, "allow", "within_budget"),
     ({"immediate_charge_minor": 4900}, "block", "over_budget"),

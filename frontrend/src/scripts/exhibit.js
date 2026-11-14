@@ -87,7 +87,7 @@ export function createScene(THREE,host,{$,el,TERMS,termValues,FIXTURES,setState}
     ctx.fillStyle='#18211e';ctx.font=`800 ${size}px Archivo`;ctx.textAlign='right';ctx.fillText(fx.headline,w-36,h*.58);ctx.textAlign='left';
     ctx.fontStretch='normal';ctx.fillStyle='#18211e22';for(let i=0;i<4;i++)ctx.fillRect(60,h-150+i*26,(w-120)*(i===3?.5:1),8);
     if(result){
-      const pass=result.decision==='WITHIN POLICY',col=pass?'#1f4ea8':'#b3243f',label=pass?'WITHIN POLICY':'REVIEW REQUIRED';
+      const pass=result.decision==='WITHIN POLICY',col=pass?'#1f4ea8':'#b3243f',label=result.decision;
       ctx.save();ctx.translate(w-300,150);ctx.rotate(-.08);ctx.globalAlpha=.88;ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=7;
       ctx.font='800 34px Archivo';const tw=ctx.measureText(label).width;ctx.strokeRect(-tw/2-22,-36,tw+44,64);ctx.textAlign='center';ctx.fillText(label,0,10);ctx.restore();
     }
@@ -99,7 +99,7 @@ export function createScene(THREE,host,{$,el,TERMS,termValues,FIXTURES,setState}
     for(const [x,y] of [[10,10],[w-10,10],[10,h-10],[w-10,h-10]]){ctx.beginPath();ctx.moveTo(x-8,y);ctx.lineTo(x+8,y);ctx.moveTo(x,y-8);ctx.lineTo(x,y+8);ctx.stroke()}
     ctx.fillStyle='#1f4ea8';ctx.font='650 28px Archivo';ctx.fillText('You allowed',32,64);
     const v=vals[term].allowed,size=fit(ctx,v,s=>`800 ${s}px Archivo`,w-64,84);ctx.font=`800 ${size}px Archivo`;ctx.fillText(v,32,64+size+10);
-    const stamp=check?(check.pass?['Within scope','#1f4ea8']:['Outside scope','#b3243f']):hint?['Outside the instruction','#b3243f']:null;
+    const stamp=check?(check.pass?['Within scope','#1f4ea8']:[check.status==='unknown'?'Needs review':'Outside scope','#b3243f']):hint?['Outside the instruction','#b3243f']:null;
     if(stamp){ctx.save();ctx.fillStyle=stamp[1];ctx.strokeStyle=stamp[1];ctx.lineWidth=4;ctx.font='800 26px Archivo';
       const tw=ctx.measureText(stamp[0]).width;ctx.strokeRect(28,h-78,tw+28,48);ctx.fillText(stamp[0],42,h-46);ctx.restore()}
     tex.needsUpdate=true;

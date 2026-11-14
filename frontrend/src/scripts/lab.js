@@ -21,13 +21,20 @@ const TERMS=[
   {key:'data',name:'Personal data scope',tab:'Data',tint:'#b9d3ec'},
 ];
 const usd=c=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:c%100?2:0}).format(c/100);
-function evaluate(policy,action){
-  const checks=[
-    {key:'charge',name:'Immediate charge',pass:action.cost<=policy.maxCost},
-    {key:'renewal',name:'Recurring billing',pass:!action.recurring||policy.recurring},
-    {key:'data',name:'Personal data scope',pass:action.fields.every(f=>policy.fields.includes(f))},
-  ];
-  return {decision:checks.every(c=>c.pass)?'WITHIN POLICY':'REVIEW REQUIRED',checks};
+async function evaluate(policy,action,signal){
+  const request={
+    policy:{currency:'USD',max_immediate_charge_minor:policy.maxCost,
+      allowed_recurring_intervals:policy.recurring?['monthly']:[],allowed_data_fields:policy.fields.map(f=>f.toLowerCase())},
+    proposal:{currency:'USD',immediate_charge_minor:action.cost,
+      recurring_interval:action.recurring?'monthly':'none',data_fields:action.fields.map(f=>f.toLowerCase())},
+  };
+  const reply=await fetch(API+'/api/v1/guard/check',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request),signal,
+  });
+  if(!reply.ok)throw new Error('Guard check failed');
+  const response=await reply.json();
+  return {request,response,decision:{allow:'WITHIN POLICY',block:'BLOCKED',review_required:'REVIEW REQUIRED'}[response.decision],
+    checks:response.checks.map(check=>({...check,name:TERMS.find(t=>t.key===check.key).name,pass:check.status==='pass'}))};
 }
 function termValues(fx){
   const {policy:p,action:a}=fx;
@@ -38,6 +45,7 @@ function termValues(fx){
   };
 }
 const firstFailing=r=>r?.checks.find(c=>!c.pass)?.key;
+const checkLabel=check=>!check?'Not checked':check.pass?'Within scope':check.status==='unknown'?'Needs review':'Outside scope';
 const DEFAULT_TERM={'free-trial':'renewal','add-on':'charge',data:'data',control:'charge'};
 const TERM_PATTERN={charge:'drip_pricing',renewal:'subscription_trap',data:'forced_action'};
 let CATALOG=null;
@@ -47,7 +55,8 @@ const ruleFor=term=>{
 };
 
 // ---------- One source of truth ----------
-const state={caseIndex:0,term:'renewal',result:null};
+const state={caseIndex:0,term:'renewal',result:null,checking:false,checkError:false};
+let checkRequest;
 const listeners=new Set();
 function setState(patch){Object.assign(state,patch);render();listeners.forEach(f=>f(state))}
 
@@ -62,7 +71,10 @@ TERMS.forEach(t=>{
   b.append(el('span',{className:'chip'}),el('span',{className:'term-name',textContent:t.name}),pair,el('span',{className:'term-verdict'}));
   $('terms').append(el('li',{},[b]));
 });
-function selectCase(i){setState({caseIndex:i,term:DEFAULT_TERM[FIXTURES[i].id],result:null})}
+function selectCase(i){
+  checkRequest?.abort();
+  setState({caseIndex:i,term:DEFAULT_TERM[FIXTURES[i].id],result:null,checking:false,checkError:false});
+}
 
 function render(){
   const fx=FIXTURES[state.caseIndex],vals=termValues(fx),r=state.result;
@@ -77,13 +89,17 @@ function render(){
     b.querySelector('.asks').textContent=vals[k].requested;
     const v=b.querySelector('.term-verdict');
     v.dataset.state=check?(check.pass?'pass':'fail'):'pending';
-    v.textContent=check?(check.pass?'✓ Within scope':'✕ Outside scope'):'Not checked';
+    v.textContent=checkLabel(check);
     b.setAttribute('aria-label',`${TERMS.find(t=>t.key===k).name}: you allowed ${vals[k].allowed}, proposal asks ${vals[k].requested}. ${v.textContent}`);
   }
   const verdict=$('verdict');
   verdict.dataset.state=r?(r.decision==='WITHIN POLICY'?'pass':'fail'):'pending';
-  verdict.textContent=r?(r.decision==='WITHIN POLICY'?'Within policy':'Review required'):'Not checked yet';
+  verdict.textContent=r?({allow:'Within policy',block:'Blocked',review_required:'Review required'})[r.response.decision]
+    :state.checking?'Checking proposal…':state.checkError?'Guard unavailable. Try again.':'Not checked yet';
+  $('check').disabled=state.checking;
   $('export').disabled=!r;
+  $('guard-details').hidden=!r;
+  $('guard-json').textContent=r?JSON.stringify({request:r.request,response:r.response},null,2):'';
   const t=TERMS.find(t=>t.key===state.term),check=r?.checks.find(c=>c.key===state.term);
   const termState=check?(check.pass?'pass':'fail'):'pending';
   document.querySelector('.head').style.setProperty('--tint',t.tint);
@@ -93,7 +109,7 @@ function render(){
   $('allowed-value').textContent=vals[state.term].allowed;
   const termStatus=$('term-status');
   termStatus.dataset.state=termState;
-  termStatus.textContent=check?(check.pass?'Within scope':'Outside scope'):'Not checked';
+  termStatus.textContent=checkLabel(check);
   $('inspector').style.setProperty('--tint',t.tint);
   $('ins-title').textContent=t.name;
   $('ins-allowed').textContent=vals[state.term].allowed;
@@ -104,11 +120,12 @@ function render(){
   $('led-asked').textContent=vals[state.term].requested;
   const it=$('ins-term');
   it.dataset.state=check?(check.pass?'pass':'fail'):'pending';
-  it.textContent=check?(check.pass?'Within scope':'Outside scope'):'Not checked';
+  it.textContent=checkLabel(check);
   const failing=r?.checks.filter(c=>!c.pass).map(c=>c.name)??[];
   $('ins-note').textContent=!r?'Check the proposal to compare every term with your instruction.'
     :check.pass&&failing.length?`This term is fine. The proposal still needs review because of ${failing.join(' and ').toLowerCase()}.`
     :check.pass?'Every term matches your instruction.'
+    :check.status==='unknown'?'The guard could not verify this term.'
     :`This term goes beyond what you allowed, so the whole proposal needs review.${ruleFor(state.term)}`;
   $('exhibit').setAttribute('aria-label',`Carbon-copy form for ${fx.name}. ${t.name} copy pulled out: you allowed ${vals[state.term].allowed}, proposal asks ${vals[state.term].requested}.`);
   $('pf-top').textContent=fx.headline;
@@ -118,16 +135,23 @@ function render(){
   });
 }
 
-$('check').onclick=()=>{
-  const fx=FIXTURES[state.caseIndex],result=evaluate(fx.policy,fx.action);
-  setState({result,term:firstFailing(result)??state.term});
+$('check').onclick=async()=>{
+  const fx=FIXTURES[state.caseIndex],request=new AbortController();
+  checkRequest=request;
+  setState({result:null,checking:true,checkError:false});
+  try{
+    const result=await evaluate(fx.policy,fx.action,AbortSignal.any([request.signal,AbortSignal.timeout(8000)]));
+    if(!request.signal.aborted)setState({result,checking:false,term:firstFailing(result)??state.term});
+  }catch{
+    if(!request.signal.aborted)setState({checking:false,checkError:true});
+  }
 };
 $('export').onclick=()=>{
   const fx=FIXTURES[state.caseIndex],r=state.result;if(!r)return;
   const vals=termValues(fx);
   const report={fixture:fx.name,intent:fx.intent,policy:fx.policy,action:fx.action,
     checks:r.checks.map(c=>({...c,authorized:vals[c.key].allowed,requested:vals[c.key].requested})),
-    decision:r.decision,executed:false,exported_at:new Date().toISOString()};
+    decision:r.decision,guard:{request:r.request,response:r.response},executed:false,exported_at:new Date().toISOString()};
   const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));
   el('a',{href:url,download:`coercionguard-${fx.id}.json`}).click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };

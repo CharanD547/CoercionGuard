@@ -43,6 +43,11 @@
       <p id="verdict" role="status" data-state="pending">Not checked yet</p>
       <button class="ghost" id="export" type="button" disabled>Export decision</button>
     </div>
+    <details id="guard-details" hidden>
+      <summary>Inspect the guard API check</summary>
+      <pre tabindex="0"><code id="guard-json"></code></pre>
+      <a href="/docs#/Action%20guard">Open API reference</a>
+    </details>
   </section>
 
   <section class="inspector lab-ui" id="inspector" aria-labelledby="ins-title">
@@ -55,3 +60,10 @@
     <p id="ins-note"></p>
   </section>
 </main>
+
+<style>
+  #guard-details{margin-top:16px}
+  #guard-details summary{cursor:pointer;color:var(--ink-2)}
+  #guard-details pre{overflow:auto;max-height:20rem;padding:12px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);font-size:13px}
+  #guard-details a{color:var(--notary)}
+</style>

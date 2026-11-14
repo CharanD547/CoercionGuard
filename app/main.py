@@ -16,6 +16,7 @@ from .browser import pool
 from .capture import CaptureError, capture_page
 from .config import get_settings
 from .guard import router as guard_router
+from .guard_mcp import create_mcp_server, mcp_route
 from .regulations import PATTERNS
 from .scanner import scan
 from .reviews import store
@@ -25,7 +26,9 @@ logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(app: FastAPI):
+    mcp = create_mcp_server()
+    app.state.guard_mcp = mcp.streamable_http_app()
     await pool.start()
 
     async def purge_loop():
@@ -34,9 +37,13 @@ async def lifespan(_: FastAPI):
             store.purge()  # captures expire after REVIEW_TTL_SECONDS
 
     purger = asyncio.create_task(purge_loop())
-    yield
-    purger.cancel()
-    await pool.stop()
+    try:
+        async with mcp.session_manager.run():
+            yield
+    finally:
+        purger.cancel()
+        await asyncio.gather(purger, return_exceptions=True)
+        await pool.stop()
 
 
 app = FastAPI(title="CoercionGuard API", version="0.1.0", lifespan=lifespan)
@@ -367,6 +374,7 @@ async def sandbox_submit(sandbox_id: str, request: Request):
 
 # Serve the frontend from the same origin; mounted last so API routes win.
 app.include_router(guard_router)
+app.router.routes.append(mcp_route)
 FRONTEND_DIR = Path(__file__).parent.parent / "frontrend" / "dist"
 if FRONTEND_DIR.is_dir():
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

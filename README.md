@@ -2,6 +2,8 @@
 
 [Full API reference](API.md) · [Release improvements](improvements.md)
 
+Connect CoercionGuard to compatible AI clients with the [read-only MCP guard](API.md#use-the-guard-from-an-ai-client).
+
 CoercionGuard reads public pricing and trial terms, checks them against what you want to avoid, and helps you set a renewal reminder. The consent lab demonstrates how developers can check a proposed agent action against user-authorized limits before executing it.
 
 ## Demo walkthrough
@@ -9,7 +11,7 @@ CoercionGuard reads public pricing and trial terms, checks them against what you
 1. Choose **Open consent lab**. Under **Compare the agents**, use **Test a live page** with a public page that has interactive choices, such as `https://www.dropbox.com/plans`, and set your goal.
 2. Choose **Try its choices myself**, then **Check these choices**. Show the quoted evidence, its source, and whether the assessment used Vultr Inference or rules. Terms-only pages can be reviewed directly through the review API.
 3. Enter a trial end date and preview the reminder. Download the calendar file or approve the team-calendar event as an operator. Open the confirmed event and retry once to verify the same event is returned.
-4. Open `/docs` to show the guard API. Use [the example client](examples/guard_client.py) to check a $49 proposal against a $40 limit, then check the corrected $40 proposal.
+4. In the lab, check the **Optional add-on** proposal and open **Inspect the guard API check** to see the request and reason codes. Use [the example client](examples/guard_client.py) to check the corrected $40 proposal, or connect an assistant using the [MCP guide](API.md#use-the-guard-from-an-ai-client).
 
 Archived captures from the HackGlobal redesign: [opening](docs/screenshots/hackglobal-opening.png), [live terms evidence](docs/screenshots/hackglobal-live-evidence.png), and [reminder preview](docs/screenshots/hackglobal-reminder-preview.png). They use the local rules engine and an illustrative trial end date.
 

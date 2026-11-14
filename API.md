@@ -11,6 +11,33 @@ Use `http://127.0.0.1:8000` locally or your deployment’s HTTPS origin. FastAPI
 
 ## Action guard
 
+### Use the guard from an AI client
+
+CoercionGuard exposes a read-only MCP tool named `evaluate_action`. It takes the same `policy` and `proposal` objects described below and returns the same decision and reason codes as REST.
+
+- **ChatGPT or Claude remote connectors.** Deploy the app over HTTPS and add `https://YOUR_HOST/mcp` as a custom MCP server in a client or workspace that supports remote connectors. Select **Streamable HTTP** when the client asks for a transport. Connector availability depends on your client and workspace. See [ChatGPT custom MCP apps](https://help.openai.com/en/articles/12584461) and [Claude custom connectors](https://support.anthropic.com/en/articles/11503834-building-custom-integrations-via-remote-mcp-servers).
+- **Other MCP clients.** Use `http://127.0.0.1:8000/mcp` for a server running on the default local port, or the HTTPS URL for a remote server. Clients with local stdio support can run the repository’s Python environment with arguments `-m app.guard_mcp` from the repository root. This runs only the guard and needs no Chromium or model credentials.
+
+Example prompt: “Use CoercionGuard to check this action. I authorize up to $40 USD now, no recurring billing, and sharing email only. The proposal charges $49 today and shares email. Explain any block before proceeding.”
+
+The MCP endpoint accepts server-to-server connections without a token. Send only action terms and data field names. The tool advises the host, which must enforce the decision and verify the user’s authorization. Page capture and calendar writes are available separately through REST.
+
+#### Usage examples and acceptance tests
+
+Call the guard immediately before a checkout, subscription signup, or form submission. The assistant reads the final terms, the tool checks them, and the host decides whether to proceed. [Dropbox’s public terms](https://www.dropbox.com/terms) provide a real renewal clause for an evidence demo. The amounts and cadence below are test inputs.
+
+| Scenario | User authorization | What the assistant proposes | Expected result |
+| --- | --- | --- | --- |
+| Checkout with an add-on | Up to $40 USD, no recurrence, email only | $49 including a $9 add-on | `block` · `over_budget` |
+| Corrected checkout | Same limits | $40 after removing the add-on | `allow` |
+| Trial converts to paid | $0 today, no recurring billing | $0 today with monthly renewal | `block` · `recurrence_disallowed` |
+| Form adds a personal field | Email only | Share email and location | `block` · `disclosure_disallowed` |
+| Final total is unavailable | Up to $40 USD | Unknown final charge | `review_required` · `charge_unknown` |
+| Price is in another currency | Up to $40 USD | €40 | `review_required` · `currency_mismatch` |
+| Uncertain price and prohibited disclosure | USD limits and email only | Unknown currency plus location disclosure | `block` · `disclosure_disallowed` |
+
+For a hosted client smoke test, connect the MCP server and use the $49 prompt above. Confirm that the client invokes `evaluate_action`, explains the block, and pauses. Change the proposal to $40 and verify that it makes a fresh tool call. If the connector is unavailable, the assistant should explain that it could not verify the action and the host should pause. Run `python -m pytest -q tests/test_guard.py` for protocol and REST parity checks.
+
 ### POST /api/v1/guard/check
 
 Send the trusted policy separately from the exact proposed action. The app integrating the guard must derive the policy from user authorization and verify the proposal facts before calling the guard.

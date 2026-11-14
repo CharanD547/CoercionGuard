@@ -8,4 +8,5 @@ pytest==9.2.0
 pytest-asyncio==1.5.0
 google-auth==2.62.2
 requests==2.34.2
+mcp==1.30.0
 tzdata==2026.6; sys_platform == "win32"
