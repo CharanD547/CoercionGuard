@@ -20,9 +20,15 @@ def _ip_is_public(ip: str) -> bool:
 
 
 async def check_public_url(url: str) -> str:
+    if not url or len(url) > 2048:
+        raise UnsafeURL("URL is missing or too long")
+    if any(c in url for c in "\r\n\t "):
+        raise UnsafeURL("URL contains whitespace")
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https"):
         raise UnsafeURL("Only http(s) URLs are allowed")
+    if parts.username or parts.password:
+        raise UnsafeURL("URLs with credentials are not allowed")
     if not parts.hostname:
         raise UnsafeURL("URL has no host")
     if get_settings().allow_private_urls:
@@ -55,6 +61,10 @@ class RateLimiter:
     def allow(self, key: str) -> bool:
         limit = get_settings().rate_limit_per_minute
         now = time.monotonic()
+        if len(self._hits) > 500:
+            stale = [k for k, q in self._hits.items() if not q or now - q[-1] > 60]
+            for k in stale:
+                del self._hits[k]
         q = self._hits[key]
         while q and now - q[0] > 60:
             q.popleft()

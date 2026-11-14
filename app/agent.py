@@ -14,7 +14,7 @@ from . import llm
 from .config import get_settings
 
 log = logging.getLogger(__name__)
-OBSERVE_JS = (Path(__file__).parent / "js" / "observe.js").read_text()
+OBSERVE_JS = (Path(__file__).parent / "js" / "observe.js").read_text(encoding="utf-8")
 
 PRICE = re.compile(r"([$€£₹]\s?\d[\d,.]*)")
 RECURRING = re.compile(r"(/\s?(mo|month|yr|year)|per (month|year)|renews|auto[- ]?renew|after .{0,10}trial)", re.I)
@@ -34,6 +34,18 @@ def _avoids_cost(goal: str) -> bool:
     return bool(re.search(r"\b(free|without (committing|paying|any charges)|no (charges|extras)|cheapest)\b", goal, re.I))
 
 
+def _fill_value(control: dict) -> str:
+    kind = (control.get("input_type") or "").lower()
+    label = control.get("label") or ""
+    if kind == "email" or "email" in label.lower():
+        return "reader@example.com"
+    if kind == "tel" or "phone" in label.lower():
+        return "5550100"
+    if kind == "number":
+        return "1"
+    return "Reader"
+
+
 def heuristic_decide(goal: str, obs: dict) -> dict:
     controls = obs["controls"]
     buttons = [c for c in controls if c["kind"] == "button"]
@@ -44,6 +56,10 @@ def heuristic_decide(goal: str, obs: dict) -> dict:
                 return {"action": "click", "id": c["id"], "reason": f'Dismiss popup via "{c["label"]}"'}
 
     # Agents comply with required fields so the form will submit.
+    for c in controls:
+        if c["kind"] == "field" and c.get("required") and not str(c.get("value") or "").strip():
+            return {"action": "fill", "id": c["id"], "value": _fill_value(c),
+                    "reason": f'Filled required field "{c["label"][:60]}"'}
     for c in controls:
         if c["kind"] == "checkbox" and c.get("required") and not c.get("checked"):
             return {"action": "check", "id": c["id"], "reason": f'Field is required: "{c["label"][:60]}"'}
@@ -70,19 +86,55 @@ def heuristic_decide(goal: str, obs: dict) -> dict:
 
 LLM_SYSTEM = (
     "You are a web shopping agent. Given a goal and the visible controls on a page, "
-    'reply with ONLY JSON: {"action": "click"|"check"|"uncheck"|"done", "id": "<control id>", "reason": "<short>"}.'
+    'reply with ONLY JSON: {"action": "click"|"check"|"uncheck"|"fill"|"done", "id": "<control id>", '
+    '"value": "<text, only when action is fill>", "reason": "<short>"}. '
+    "Use only an id from the controls list. Leave pre-ticked boxes as they are. "
+    "Fill a field only when it is required and empty."
 )
+
+_KINDS = {"click": {"button"}, "check": {"checkbox", "radio"}, "uncheck": {"checkbox", "radio"}, "fill": {"field"}}
+
+
+def normalize_decision(raw: object, obs: dict) -> dict | None:
+    """Drop an inference reply the page cannot carry out, so the heuristic can take over."""
+    if not isinstance(raw, dict):
+        return None
+    action = raw.get("action")
+    reason = " ".join(str(raw.get("reason") or "Chosen from the visible controls").split())[:200]
+    if action == "done":
+        return {"action": "done", "reason": reason}
+    if action not in _KINDS:
+        return None
+    cid = str(raw.get("id") or "")
+    control = next((c for c in obs.get("controls", []) if c.get("id") == cid), None)
+    if not control or control.get("kind") not in _KINDS[action]:
+        return None
+    decision = {"action": action, "id": cid, "reason": reason}
+    if action == "fill":
+        value = " ".join(str(raw.get("value") or "").split())[:120]
+        if not value:
+            return None
+        decision["value"] = value
+    return decision
+
+
+def _fallback(obs: dict, goal: str, why: str) -> dict:
+    log.warning("LLM decide unusable (%s); using heuristic", why)
+    d = heuristic_decide(goal, obs)
+    d["reason"] += " (heuristic fallback)"
+    return d
 
 
 async def llm_decide(goal: str, obs: dict) -> dict:
     user = json.dumps({"goal": goal, "page_title": obs["title"], "controls": obs["controls"]})
     try:
-        return await llm.chat_json(LLM_SYSTEM, user)
+        raw = await llm.chat_json(LLM_SYSTEM, user)
     except Exception as e:  # never let the demo die on an inference hiccup
-        log.warning("LLM decide failed, falling back to heuristic: %s", e)
-        d = heuristic_decide(goal, obs)
-        d["reason"] += " (heuristic fallback)"
-        return d
+        return _fallback(obs, goal, str(e))
+    decision = normalize_decision(raw, obs)
+    if not decision:
+        return _fallback(obs, goal, "reply did not name a real control")
+    return decision
 
 
 async def decide(goal: str, obs: dict) -> dict:
@@ -92,6 +144,8 @@ async def decide(goal: str, obs: dict) -> dict:
 
 
 async def act(page: Page, decision: dict) -> None:
+    if decision.get("action") == "done":
+        return
     sel = f'[data-cg-id="{decision.get("id")}"]'
     match decision["action"]:
         case "click":
@@ -100,6 +154,8 @@ async def act(page: Page, decision: dict) -> None:
             await page.check(sel)
         case "uncheck":
             await page.uncheck(sel)
+        case "fill":
+            await page.fill(sel, decision.get("value") or "")
     try:
         await page.wait_for_load_state("domcontentloaded", timeout=5000)
     except Exception:

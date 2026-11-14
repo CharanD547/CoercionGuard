@@ -71,6 +71,20 @@ PATTERNS: dict[str, dict] = {
         "eu": "DSA Art. 25(3)(b)",
         "us": "-",
     },
+    "misleading_free": {
+        "label": "Misleading free claim",
+        "severity": 4,
+        "india_ccpa": "Subscription Trap; Misleading Advertisement",
+        "eu": "UCPD Annex I (misleading 'free')",
+        "us": "FTC Negative Option Rule; CA ROSCA",
+    },
+    "social_proof": {
+        "label": "Unverified social proof",
+        "severity": 2,
+        "india_ccpa": "False Urgency",
+        "eu": "UCPD Art. 6 (misleading practice)",
+        "us": "FTC Act §5 (deceptive practices)",
+    },
 }
 
 
@@ -92,3 +106,20 @@ def risk_score(findings: list[dict]) -> int:
     """0-100: sum of severities per distinct element, saturating."""
     total = sum(PATTERNS.get(f["type"], {}).get("severity", 1) for f in findings)
     return min(100, total * 6)
+
+
+def summarize(findings: list[dict], fixes: list[dict] | None = None) -> str:
+    """One line a judge can read without opening the finding list."""
+    count = len(findings)
+    if not count:
+        return "No dark patterns detected."
+    labels = sorted({f.get("pattern_label") or f["type"] for f in findings})
+    shown = ", ".join(labels[:4])
+    if len(labels) > 4:
+        shown += f", and {len(labels) - 4} more"
+    noun = "pattern" if count == 1 else "patterns"
+    line = f"{count} dark {noun} ({shown}). Risk {risk_score(findings)}."
+    if fixes is not None:
+        n = len(fixes)
+        line += f" {n} fix{'es' if n != 1 else ''} applied."
+    return line

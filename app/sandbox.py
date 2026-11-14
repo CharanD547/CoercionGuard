@@ -92,7 +92,7 @@ def list_sandboxes() -> list[dict]:
 def page_html(sandbox_id: str) -> str:
     if sandbox_id not in SANDBOXES:
         raise KeyError(sandbox_id)
-    return (SANDBOX_DIR / f"{sandbox_id}.html").read_text()
+    return (SANDBOX_DIR / f"{sandbox_id}.html").read_text(encoding="utf-8")
 
 
 def checkout(sandbox_id: str, form: dict) -> dict:

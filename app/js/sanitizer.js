@@ -62,6 +62,22 @@
         el.style.cssText += ";color:#555!important;font-size:12px!important;animation:none!important;";
         fixes.push({ type: f.type, element_id: f.element_id, action: "Neutralised countdown/scarcity claim" });
         break;
+      case "misleading_free": {
+        const cost = f.hidden_cost || "";
+        if (cost && !text(el).includes(cost)) {
+          const note = document.createElement("span");
+          note.textContent = ` — then ${cost}`;
+          note.style.cssText = "color:#b00020;font-weight:800;";
+          el.append(note);
+        }
+        fixes.push({ type: f.type, element_id: f.element_id, action: "Put the hidden recurring price on the free claim" });
+        break;
+      }
+      case "social_proof":
+        el.textContent = "(unverified popularity claim removed)";
+        el.style.cssText += ";color:#555!important;font-size:12px!important;font-weight:500!important;";
+        fixes.push({ type: f.type, element_id: f.element_id, action: "Removed unverified social-proof claim" });
+        break;
       case "confirmshaming":
         setLabel(el, el.getAttribute("aria-label") || el.title || "No thanks");
         fixes.push({ type: f.type, element_id: f.element_id, action: "Replaced guilt-trip wording with a neutral label" });
@@ -78,11 +94,22 @@
         }
         break;
       }
-      case "drip_pricing":
+      case "drip_pricing": {
         el.style.cssText += ";font-weight:700!important;color:#b00020!important;";
         badge(el, "fee not included in headline price");
-        fixes.push({ type: f.type, element_id: f.element_id, action: "Highlighted separately disclosed fee" });
+        const feeMatch = text(el).match(/[$€£₹]\s?\d[\d,.]*/);
+        if (feeMatch) {
+          for (const n of document.querySelectorAll("body *")) {
+            if (n.children.length) continue;
+            const t = text(n);
+            if (t.length > 16 || !/^[$€£₹]/.test(t) || t.includes(feeMatch[0])) continue;
+            if (parseFloat(getComputedStyle(n).fontSize) < 24) continue;
+            n.append(document.createTextNode(" + " + feeMatch[0]));
+          }
+        }
+        fixes.push({ type: f.type, element_id: f.element_id, action: "Highlighted the fee and added it to the headline price" });
         break;
+      }
       case "disguised_ad":
         setLabel(el, "[AD] " + text(el));
         el.style.opacity = "0.5";
@@ -95,9 +122,24 @@
     }
   }
 
-  // Freeze countdown timers that rewrite themselves.
-  const maxId = setTimeout(() => {}, 0);
-  for (let i = 0; i <= maxId; i++) clearInterval(i);
+  // Stop countdown timers only when one was actually a fake deadline.
+  // Timer ids in a fresh page are small; cap the walk so a huge id can't stall the scan.
+  if (findings.some((f) => f.type === "false_urgency")) {
+    const newest = setTimeout(() => {}, 0);
+    clearTimeout(newest);
+    const cap = Math.min(newest, 4000);
+    for (let i = 0; i <= cap; i++) clearInterval(i);
+  }
+
+  if (fixes.length && document.body && !document.querySelector(".cg-banner")) {
+    const bar = document.createElement("div");
+    bar.className = "cg-banner";
+    bar.setAttribute("role", "status");
+    const noun = fixes.length === 1 ? "element" : "elements";
+    bar.textContent = `CoercionGuard neutralized ${fixes.length} manipulative ${noun} on this page.`;
+    bar.style.cssText = "position:relative;z-index:5;margin:0;padding:10px 14px;background:#1f4ea8;color:#fff;font:600 14px/1.4 system-ui;";
+    document.body.prepend(bar);
+  }
 
   return fixes;
 }

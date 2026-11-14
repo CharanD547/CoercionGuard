@@ -1,0 +1,57 @@
+<main id="lab" tabindex="-1" aria-labelledby="headline">
+  <section class="head lab-ui" aria-label="Decision">
+    <p class="instruction"><span>Your instruction</span><q id="intent">Start a free trial without agreeing to recurring billing.</q></p>
+    <p class="cover"><span>The proposal </span><b id="cover">$0 due now</b></p>
+    <p class="kicker"><i id="kicker-chip" aria-hidden="true"></i><span id="kicker">Recurring billing</span></p>
+    <h1 id="headline" data-state="pending">Auto-renewal</h1>
+    <p class="allowed-line"><span>You allowed</span><b id="allowed-value"></b><span id="term-status" data-state="pending">Not checked</span></p>
+    <p id="proposal-detail"></p>
+  </section>
+
+  <div class="stage-slot" id="stage-slot">
+    <div id="exhibit" role="group" aria-label="Proposal exhibit">
+      <div class="paper-fallback" aria-hidden="true"><div class="pf-stack">
+        <div class="pf-sheet" data-term="data"></div><div class="pf-sheet" data-term="renewal"></div><div class="pf-sheet" data-term="charge"></div>
+        <div class="pf-sheet top" id="pf-top">$0 due now</div>
+      </div></div>
+      <div class="tag off" data-kind="allowed" id="tag-allowed" aria-hidden="true"></div>
+      <div class="tag off" data-kind="requested" id="tag-requested" aria-hidden="true"></div>
+      <div class="ledger" id="ledger">
+        <p class="ledger-term" id="led-term"></p>
+        <p><span>You allowed</span><b id="led-allowed"></b></p>
+        <p><span>Proposal asks</span><b id="led-asked"></b></p>
+      </div>
+      <p class="hint" id="hint" hidden>Drag to turn the form. Select a copy to pull it out.</p>
+      <div class="view-controls" id="view-controls" hidden><button id="reset-view" type="button">Reset view</button></div>
+      <div class="intro-ui">
+        <div class="opening-copy">
+          <p class="opening-brand">CoercionGuard</p>
+          <h2>Read the terms your agent sees.</h2>
+          <p>Follow a free trial from its headline price to the renewal it asks your agent to approve.</p>
+          <button id="skip" type="button">Open consent lab <span aria-hidden="true">↗</span></button>
+        </div>
+        <p class="opening-term" id="opening-term" aria-hidden="true">Due today · $0</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="evidence lab-ui" aria-labelledby="terms-title">
+    <h2 id="terms-title">What the proposal asks for</h2>
+    <ol id="terms"></ol>
+    <div class="actions">
+      <button id="check" type="button">Check proposal</button>
+      <p id="verdict" role="status" data-state="pending">Not checked yet</p>
+      <button class="ghost" id="export" type="button" disabled>Export decision</button>
+    </div>
+  </section>
+
+  <section class="inspector lab-ui" id="inspector" aria-labelledby="ins-title">
+    <h2 id="ins-title"></h2>
+    <dl>
+      <div><dt>You allowed</dt><dd id="ins-allowed"></dd></div>
+      <div><dt>Proposal asks</dt><dd id="ins-requested"></dd></div>
+      <div><dt>This term</dt><dd id="ins-term"></dd></div>
+    </dl>
+    <p id="ins-note"></p>
+  </section>
+</main>

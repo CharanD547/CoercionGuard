@@ -1,0 +1,24 @@
+<section id="live" class="lab-ui" aria-labelledby="live-title">
+  <h2 id="live-title">Compare the agents</h2>
+  <p>The same trap on a cached checkout page. A headless browser agent attempts the task twice at once: alone, and behind CoercionGuard. As found marks the traps. Latest follows the agent.</p>
+  <div class="live-row"><button id="live-run" type="button" disabled>Run sandbox comparison</button><p id="live-status" role="status">Checking for the CoercionGuard API…</p></div>
+  <div class="lanes" id="lanes" hidden>
+    <figure class="lane">
+      <figcaption>Agent alone <b id="u-state"></b></figcaption>
+      <div class="shot"><img id="u-shot" alt="The trap page as the agent alone saw it"><div class="marks" id="u-marks" hidden></div></div>
+      <div class="lane-tools"><button type="button" id="u-found" aria-pressed="false">As found</button><button type="button" id="u-latest" aria-pressed="true">Latest</button><p class="receipt" id="u-receipt"></p></div>
+      <ol id="u-log"></ol>
+    </figure>
+    <figure class="lane">
+      <figcaption>Agent with CoercionGuard <b id="p-state"></b></figcaption>
+      <div class="shot"><img id="p-shot" alt="The same page after CoercionGuard rewrote it"><div class="marks" id="p-marks" hidden></div></div>
+      <div class="lane-tools"><button type="button" id="p-found" aria-pressed="false">As found</button><button type="button" id="p-latest" aria-pressed="true">Latest</button><p class="receipt" id="p-receipt"></p></div>
+      <ol id="p-log"></ol>
+    </figure>
+  </div>
+  <section id="pattern-report" hidden aria-labelledby="pattern-title">
+    <h3 id="pattern-title">What the page was doing</h3>
+    <p id="risk-line"></p>
+    <ol id="finding-list"></ol>
+  </section>
+</section>

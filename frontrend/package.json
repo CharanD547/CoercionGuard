@@ -1,0 +1,13 @@
+{
+  "name": "coercionguard-frontend",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "build": "astro build"
+  },
+  "dependencies": {
+    "astro": "7.4.12",
+    "three": "0.160.0"
+  }
+}

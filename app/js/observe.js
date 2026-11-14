@@ -29,6 +29,14 @@
     const lab = el.labels && el.labels[0] ? text(el.labels[0]) : text(el.parentElement || el);
     controls.push({ id: tag(el), kind: el.type, label: lab.slice(0, 160), checked: el.checked, required: el.required, in_overlay: !!(overlay && overlay.contains(el)) });
   }
+  for (const el of document.querySelectorAll("input[type=text], input[type=email], input[type=tel], input[type=number], textarea")) {
+    if (!visible(el)) continue;
+    const lab = el.labels && el.labels[0] ? text(el.labels[0]) : (el.getAttribute("aria-label") || el.name || el.placeholder || "text field");
+    controls.push({
+      id: tag(el), kind: "field", input_type: el.type || "text", label: lab.slice(0, 160),
+      value: (el.value || "").slice(0, 120), required: el.required, in_overlay: !!(overlay && overlay.contains(el)),
+    });
+  }
   const receiptEl = document.getElementById("cg-receipt");
   return {
     url: location.href,

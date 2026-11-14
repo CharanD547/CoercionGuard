@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 from playwright.async_api import Route
 
 from .browser import detect, pool, sandbox_url, sanitize, screenshot_b64
-from .regulations import risk_score
+from .regulations import risk_score, summarize
 from .security import is_public_host
 
 BLOCKED_RESOURCE_TYPES = {"media", "font"}
@@ -58,6 +58,8 @@ async def scan(*, url: str | None = None, sandbox_id: str | None = None) -> dict
         "target": target,
         "title": report["title"],
         "risk_score": risk_score(report["findings"]),
+        "summary": summarize(report["findings"], fixes),
+        "viewport": report.get("viewport"),
         "counts": by_type,
         "findings": report["findings"],
         "fixes": fixes,

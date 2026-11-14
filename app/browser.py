@@ -12,8 +12,8 @@ from .config import get_settings
 from .regulations import enrich
 
 JS_DIR = Path(__file__).parent / "js"
-DETECTOR_JS = (JS_DIR / "detector.js").read_text()
-SANITIZER_JS = (JS_DIR / "sanitizer.js").read_text()
+DETECTOR_JS = (JS_DIR / "detector.js").read_text(encoding="utf-8")
+SANITIZER_JS = (JS_DIR / "sanitizer.js").read_text(encoding="utf-8")
 
 
 class BrowserPool:

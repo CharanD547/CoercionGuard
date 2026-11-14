@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from . import llm, sandbox
 from .battle import battles, create_battle, run_battle
@@ -56,14 +56,14 @@ class ScanRequest(BaseModel):
 
 class BattleRequest(BaseModel):
     sandbox_id: str
-    goal: str | None = None
+    goal: str | None = Field(default=None, max_length=400)
 
 
 @app.get("/api/health")
 async def health():
     s = get_settings()
     return {"ok": True, "agent_mode": "llm" if s.agent_mode == "llm" and llm.enabled() else "heuristic",
-            "queued": pool.queued}
+            "queued": pool.queued, "patterns": len(PATTERNS), "sandboxes": len(sandbox.SANDBOXES)}
 
 
 @app.get("/api/patterns")
@@ -153,6 +153,6 @@ async def sandbox_submit(sandbox_id: str, request: Request):
 
 
 # Serve the frontend from the same origin; mounted last so API routes win.
-FRONTEND_DIR = Path(__file__).parent.parent / "frontrend"
+FRONTEND_DIR = Path(__file__).parent.parent / "frontrend" / "dist"
 if FRONTEND_DIR.is_dir():
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

@@ -15,7 +15,12 @@
     const key = type + ":" + id;
     if (seen.has(key)) return;
     seen.add(key);
-    findings.push({ type, element_id: id, text: text(el).slice(0, 200), evidence, ...extra });
+    const r = el.getBoundingClientRect();
+    findings.push({
+      type, element_id: id, text: text(el).slice(0, 200), evidence,
+      box: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) },
+      ...extra,
+    });
   };
   const visible = (el) => {
     const s = getComputedStyle(el);
@@ -66,8 +71,10 @@
   const URGENCY = /(only \d+ (left|remaining|seats?)|offer ends|ends in|expires in|hurry|limited time|\d+ (people|others) (are )?(viewing|looking)|last chance|selling fast|\b\d{1,2}:\d{2}(:\d{2})?\b)/i;
   const DOUBLE_NEG = /(uncheck|untick|deselect|do not|don'?t).{0,40}\b(not|no|don'?t|opt[- ]?out)\b/i;
   const FEE = /(service|convenience|booking|processing|handling|platform) fee/i;
+  const SOCIAL = /\b(?:join\s+\d|\d[\d,.]*\+?\s+(?:people|customers|users|marketers|shoppers|buyers|others)|trusted by\b|bestseller)\b/i;
 
   const all = Array.from(document.querySelectorAll("body *")).filter(visible);
+  let hiddenCost = "";
 
   // 1. Hidden recurring costs: small or low-contrast price/renewal text.
   for (const el of all) {
@@ -82,13 +89,18 @@
       add("subscription_trap", el, `Recurring cost shown at ${size}px, contrast ${c.toFixed(1)}:1`, {
         font_px: size, contrast: +c.toFixed(2),
       });
+      if (!hiddenCost) {
+        const quoted = t.match(/[$€£₹]\s?\d[\d,.]*\s*(?:\/\s*|per\s+)?(?:mo|month|yr|year|week)?/i);
+        hiddenCost = (quoted ? quoted[0] : t).slice(0, 80);
+      }
     }
   }
 
   // 2. Pre-selected paid add-ons, trick questions, forced consent.
   for (const input of document.querySelectorAll("input[type=checkbox], input[type=radio]")) {
     const label = labelFor(input);
-    if (input.checked && input.type === "checkbox" && (PRICE.test(label) || ADDON.test(label)) && !MARKETING.test(label)) {
+    const paidDefault = input.checked && !MARKETING.test(label) && (PRICE.test(label) || (input.type === "checkbox" && ADDON.test(label)));
+    if (paidDefault) {
       add("preselection", input, `Checked by default: "${label.slice(0, 120)}"`, { label });
     }
     if (DOUBLE_NEG.test(label) && MARKETING.test(label)) {
@@ -101,11 +113,24 @@
     }
   }
 
-  // 3. False urgency (countdowns, scarcity claims).
+  // 3. False urgency (countdowns, scarcity claims) and unverified crowd claims.
   for (const el of all) {
     if (el.children.length > 2) continue;
     const t = text(el);
-    if (t && t.length < 160 && URGENCY.test(t)) add("false_urgency", el, "Urgency/scarcity claim");
+    if (!t || t.length >= 160) continue;
+    if (URGENCY.test(t)) add("false_urgency", el, "Urgency/scarcity claim");
+    else if (SOCIAL.test(t)) add("social_proof", el, "Popularity claim with no source a reader can check");
+  }
+
+  // A headline that says "free" while a recurring charge is buried elsewhere.
+  if (hiddenCost) {
+    for (const el of document.querySelectorAll("h1, h2, h3")) {
+      if (!visible(el)) continue;
+      const t = text(el);
+      if (t.length < 90 && /\bfree\b/i.test(t) && !PRICE.test(t)) {
+        add("misleading_free", el, `Says "${t}" while the page discloses ${hiddenCost}`, { hidden_cost: hiddenCost });
+      }
+    }
   }
 
   // 4. Confirmshaming + asymmetric choices.
@@ -154,5 +179,5 @@
     document.title + " " + (document.body ? document.body.innerText.slice(0, 2000) : "")
   ) || !!document.querySelector("iframe[src*=captcha], iframe[src*=challenge], #challenge-form");
 
-  return { findings, blocked, title: document.title };
+  return { findings, blocked, title: document.title, viewport: { vw: innerWidth, vh: innerHeight } };
 }
