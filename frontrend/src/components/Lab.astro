@@ -1,9 +1,10 @@
 <main id="lab" tabindex="-1" aria-labelledby="headline">
   <section class="head lab-ui" aria-label="Decision">
+    <nav class="lab-ui" id="cases" aria-label="Example proposals"></nav>
     <p class="instruction"><span>Your instruction</span><q id="intent">Start a free trial without agreeing to recurring billing.</q></p>
     <p class="cover"><span>The proposal </span><b id="cover">$0 due now</b></p>
     <p class="kicker"><i id="kicker-chip" aria-hidden="true"></i><span id="kicker">Recurring billing</span></p>
-    <h1 id="headline" data-state="pending">Auto-renewal</h1>
+    <h2 id="headline" data-state="pending">Auto-renewal</h2>
     <p class="allowed-line"><span>You allowed</span><b id="allowed-value"></b><span id="term-status" data-state="pending">Not checked</span></p>
     <p id="proposal-detail"></p>
   </section>
@@ -28,7 +29,7 @@
           <p class="opening-brand">CoercionGuard</p>
           <h2>Read the terms your agent sees.</h2>
           <p>Follow a free trial from its headline price to the renewal it asks your agent to approve.</p>
-          <button id="skip" type="button">Open consent lab <span aria-hidden="true">↗</span></button>
+          <button id="skip" type="button">Review a live page <span aria-hidden="true">↗</span></button>
         </div>
         <p class="opening-term" id="opening-term" aria-hidden="true">Due today · $0</p>
       </div>
@@ -40,6 +41,7 @@
     <ol id="terms"></ol>
     <div class="actions">
       <button id="check" type="button">Check proposal</button>
+      <button class="ghost" id="revise" type="button" hidden></button>
       <p id="verdict" role="status" data-state="pending">Not checked yet</p>
       <button class="ghost" id="export" type="button" disabled>Export decision</button>
     </div>

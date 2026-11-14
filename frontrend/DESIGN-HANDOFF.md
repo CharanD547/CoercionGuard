@@ -6,10 +6,10 @@ Apple was the primary reference for revealing a technical detail at close range.
 
 | Trigger | Change and end state | Interruption |
 | --- | --- | --- |
-| First visit | Static HTML displays the title, entry button, and stacked paper while the 3D bundle loads. At 950 ms the renewal copy slides out. At 2.1 s the authorization layer enters. | The entry button is available throughout. The flat paper remains usable if the 3D bundle fails. |
-| Open consent lab | The same exhibit moves to its lab slot over 600 ms. The term selector and proposal checker become available. | Escape, reduced motion, and resize can settle the handoff immediately. |
+| Every page load | Static HTML displays the title, entry button, and stacked paper while the 3D bundle loads. At 950 ms the renewal copy slides out. At 2.1 s the authorization layer enters. | The entry button is available throughout. The flat paper remains usable if the 3D bundle fails. |
+| Review a live page | The exhibit returns to its lab slot over 600 ms. The live review opens with focus on the URL field. A direct lab link lands at the proposal checker. | Escape, reduced motion, and resize can settle the handoff immediately. |
 | Select a term or drag the exhibit | The corresponding paper copy slides out, or the form turns to show its layers. | The latest input replaces the previous animation target. The term buttons expose the same evidence by keyboard. |
-| Replay intro | The opening returns. Closing it restores focus to Replay intro. | Escape closes the opening. Reload in the same tab goes directly to the lab. |
+| Replay intro | The opening returns. Closing it restores focus to Replay intro. | Escape closes the opening. Reloading or returning via browser history shows the opening again. |
 
 ## Assets and licenses
 

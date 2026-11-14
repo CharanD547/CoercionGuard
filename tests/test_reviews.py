@@ -242,6 +242,7 @@ def test_model_path_fetches_linked_terms_and_drops_invented_quotes(client, site,
     monkeypatch.setattr(llm, "chat_json", fake)
     a = client.post(f"/api/reviews/{rv['id']}/check", json={}).json()["assessment"]
     assert a["engine"].startswith("vultr:") and a["linked_page"].endswith("/terms")
+    assert a["analysis_mode"] == "vultr"
     assert [c["evidence"]["source"] for c in a["conflicts"]] == ["linked"]
     assert a["unverified"][0]["claimed_excerpt"].startswith("A $99 setup fee")
     assert a["follow_up"]["evidence"]["source"] == "linked"

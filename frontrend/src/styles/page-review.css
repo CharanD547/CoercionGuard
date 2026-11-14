@@ -1,10 +1,14 @@
-/* Live page sandbox inside "Compare the agents". Uses the lab's tokens and stamp language. */
-.pr{margin-top:40px;padding-top:32px;border-top:1px solid #b9c6b4}
+/* The live review shares the paper, ink, and verdict styles of the lab. */
+.pr{padding:clamp(28px,5vw,68px) clamp(16px,3vw,40px);border-bottom:1px solid var(--rule)}
+.pr>h1{max-width:16ch;margin:0;font-size:clamp(38px,6vw,76px);line-height:1;letter-spacing:-.055em}
+.pr-more{margin-top:8px;color:var(--ink-2)}
+.pr-more summary,.pr-head summary{cursor:pointer}
+.pr-more>.pr-ghost{margin-top:8px}
 .pr-lede{max-width:62ch;color:var(--ink-2);margin:8px 0 16px}
 .pr-primary{display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:var(--sheet);border:0;border-radius:999px;
   padding:11px 20px;font-weight:650;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .pr-primary:hover{background:#2c3a35}
-.pr-primary:disabled{opacity:.5;cursor:default}
+.pr-primary:disabled,.pr-ghost:disabled{opacity:.5;cursor:default}
 .pr-ghost{background:var(--sheet);border:1px solid var(--ink);border-radius:999px;padding:10px 18px;font-weight:650;white-space:nowrap}
 .pr-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:14px}
 .pr-status{margin:0;font-size:14px;color:var(--ink-2)}
@@ -45,8 +49,9 @@
 .pr-head{grid-area:head;margin-bottom:16px}
 .pr-choices{grid-area:choices}
 .pr-shot{grid-area:shot;margin:0;position:sticky;top:16px}
-.pr-verdict{grid-area:verdict;margin-top:26px}
-.pr-remind{grid-area:remind;margin-top:26px}
+.pr-verdict,.pr-remind{margin-top:24px;padding:clamp(12px,2vw,22px);background:var(--sheet);border:1px solid var(--rule);border-radius:14px;min-width:0}
+.pr-verdict{grid-area:verdict}
+.pr-remind{grid-area:remind}
 .pr-head h3{margin:0;font-weight:800;font-stretch:118%;font-size:clamp(24px,2.6vw,34px);line-height:1.05;letter-spacing:-.025em;overflow-wrap:anywhere;outline:none}
 .pr-meta{margin:6px 0 0;font-size:14px;color:var(--ink-2);overflow-wrap:anywhere}
 .pr-meta a{color:var(--notary)}
@@ -115,11 +120,12 @@
 .pr-operator label{width:100%;font-weight:650}
 
 @media (max-width:900px){
-  .pr-work{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "shot" "choices" "verdict" "remind"}
-  .pr-shot{position:static;margin-bottom:20px}
+  .pr-work{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "choices" "verdict" "remind" "shot"}
+  .pr-shot{position:static;margin-top:20px}
   .pr-frame{max-height:340px}
 }
 @media (max-width:560px){
   .pr-row .pr-primary{flex:1}
+  .pr-primary,.pr-ghost{white-space:normal}
   .pr-remind-form label{flex:1 1 140px}
 }

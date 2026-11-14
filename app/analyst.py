@@ -10,6 +10,7 @@ import json
 import logging
 import re
 import time
+from dataclasses import replace
 
 from . import llm
 from .capture import CaptureError, capture_page
@@ -60,6 +61,14 @@ def verify(excerpt: str, source: str, review: Review) -> dict | None:
 def _window(line: str, m: re.Match) -> str:
     """A short excerpt around a match that is still an exact substring of the line."""
     start, end = max(0, m.start() - 90), min(len(line), m.end() + 130)
+    if start:
+        boundary = line.find(" ", start, m.start())
+        if boundary != -1:
+            start = boundary + 1
+    if end < len(line):
+        boundary = line.rfind(" ", m.end(), end)
+        if boundary != -1:
+            end = boundary
     return line[start:end].strip()
 
 
@@ -199,30 +208,39 @@ async def model_assess(review: Review) -> dict:
         note = f"\nTool result: {problem}" if problem else ""
         reply = await llm.chat_json(SYSTEM + "\nThe tool is no longer available. Give your final answer." + note,
                                     _payload(review, can_fetch=False), max_tokens=900)
-    if not isinstance(reply, dict) or not isinstance(reply.get("conflicts", []), list):
+    if (not isinstance(reply, dict) or not isinstance(reply.get("conflicts"), list)
+            or not isinstance(reply.get("renewal"), dict)):
         raise ValueError("Model reply wasn't the expected JSON")
     return reply
 
 
 async def assess(review: Review) -> dict:
+    original = review
+    review = replace(review, selections=dict(review.selections))
     s = get_settings()
     engine = "rules"
+    analysis_mode = "rules"
     raw = None
     if llm.enabled():
         try:
             raw = await model_assess(review)
             engine = f"vultr:{s.vultr_inference_model}"
+            analysis_mode = "vultr"
         except Exception as e:  # inference trouble shouldn't take the review down
+            analysis_mode = "rules_fallback"
             log.warning("Model assessment failed, using rules: %s", e)
     if raw is None:
         raw = rules_assess(review)
+    if original.linked is None and review.linked is not None:
+        original.linked = review.linked
 
     conflicts, unverified = [], []
     ids = {c["id"]: c for c in review.capture["controls"]}
     for item in raw.get("conflicts") or []:
         if not isinstance(item, dict):
             continue
-        cid = item.get("control_id") if item.get("control_id") in ids else None
+        proposed_id = item.get("control_id")
+        cid = proposed_id if isinstance(proposed_id, str) and proposed_id in ids else None
         issue = " ".join(str(item.get("issue") or "").split())[:300]
         evidence = verify(item.get("excerpt"), item.get("source") or "page", review)
         record = {"control_id": cid, "control_label": ids[cid]["label"] if cid else None, "issue": issue}
@@ -233,6 +251,15 @@ async def assess(review: Review) -> dict:
 
     ren = raw.get("renewal") or {}
     renewal_evidence = verify(ren.get("excerpt"), ren.get("source") or "page", review) if ren.get("detected") else None
+    if renewal_evidence and not (RENEW.search(renewal_evidence["excerpt"]) or
+                                 RECURRING_PRICE.search(renewal_evidence["excerpt"])):
+        renewal_evidence = None
+    totals = review.totals()
+    limit = _intents(review.goal)["limit"]
+    total = totals.get("current_total")
+    amount_unclear = limit is not None and (
+        not totals["known"] or not total or total["currency"] != limit["currency"]
+    )
     follow_up = None
     if renewal_evidence:
         follow_up = {"type": "renewal_reminder", "evidence": renewal_evidence,
@@ -241,14 +268,17 @@ async def assess(review: Review) -> dict:
 
     return {
         "engine": engine,
+        "analysis_mode": analysis_mode,
         "checked_at": round(time.time()),
         "checked_selections": dict(review.selections),
-        "verdict": "conflicts" if conflicts else ("unclear" if unverified else "fits_goal"),
+        "verdict": "conflicts" if conflicts else ("unclear" if unverified or amount_unclear else "fits_goal"),
         "conflicts": conflicts,
         "unverified": unverified,
-        "recommendation": " ".join(str(raw.get("recommendation") or "").split())[:600],
+        "recommendation": ("The captured terms do not establish the total against your budget."
+                           if amount_unclear and not conflicts else
+                           " ".join(str(raw.get("recommendation") or "").split())[:600]),
         "next_step": " ".join(str(raw.get("next_step") or "").split())[:300],
         "follow_up": follow_up,
         "linked_page": review.linked["url"] if review.linked else None,
-        "price_change": review.totals(),
+        "price_change": totals,
     }

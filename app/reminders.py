@@ -29,7 +29,7 @@ class CalendarUnavailable(RuntimeError):
 
 def build_event(review: Review, trial_end: str, tz_name: str, days_before: int = 2) -> dict:
     follow = (review.assessment or {}).get("follow_up")
-    if not follow:
+    if not follow or review.assessment.get("checked_selections") != review.selections:
         raise ReminderError("Check the choices first. A reminder is offered only when the page's renewal terms are cited.")
     try:
         tz = ZoneInfo(tz_name)

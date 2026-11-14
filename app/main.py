@@ -15,6 +15,7 @@ from .battle import battles, create_battle, run_battle
 from .browser import pool
 from .capture import CaptureError, capture_page
 from .config import get_settings
+from .guard import router as guard_router
 from .regulations import PATTERNS
 from .scanner import scan
 from .reviews import store
@@ -365,6 +366,7 @@ async def sandbox_submit(sandbox_id: str, request: Request):
 
 
 # Serve the frontend from the same origin; mounted last so API routes win.
+app.include_router(guard_router)
 FRONTEND_DIR = Path(__file__).parent.parent / "frontrend" / "dist"
 if FRONTEND_DIR.is_dir():
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

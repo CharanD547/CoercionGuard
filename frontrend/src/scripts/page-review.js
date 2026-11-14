@@ -9,6 +9,7 @@ const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let review=null;   // latest server copy
 let pending=null;  // in-flight selection save, so Check waits for it
+let reminderPreview=null;
 
 async function api(path,{method='GET',body,headers={}}={}){
   const res=await fetch(API+path,{method,headers:{...(body?{'content-type':'application/json'}:{}),...headers},body:body?JSON.stringify(body):undefined});
@@ -32,7 +33,7 @@ $('pr-chips').addEventListener('click',e=>{
 });
 form.querySelector('.pr-try').addEventListener('click',e=>{
   const b=e.target.closest('button[data-url]');if(!b)return;
-  urlIn.value=b.dataset.url;goalIn.value=b.dataset.goal;$('pr-agents').focus();
+  urlIn.value=b.dataset.url;goalIn.value=b.dataset.goal;$('pr-capture').focus();
 });
 
 // ---------- Where the page comes from: an address, an uploaded copy, or the archive ----------
@@ -108,28 +109,45 @@ document.addEventListener('cg-battle-done',e=>{
 });
 
 const STAGES=['Opening the page in a private browser…','Reading its choices and their defaults…','Taking a snapshot of the original…','Almost there…'];
-form.addEventListener('submit',async e=>{
-  e.preventDefault();
-  const f=readForm();if(!f)return;
+async function createReview(getInput){
   lastAction='choices';
   const err=$('pr-error');
-  $('pr-capture').disabled=true;
+  err.hidden=true;
+  $('pr-fallback').hidden=true;
+  $('pr-capture').disabled=$('pr-example').disabled=true;
   let i=0;$('pr-status').textContent=STAGES[0];
   const tick=setInterval(()=>{i=Math.min(i+1,STAGES.length-1);$('pr-status').textContent=STAGES[i]},4000);
+  let f;
   try{
+    f=await getInput();
     const r=await api('/api/reviews',{method:'POST',body:f});
-    if(r.status==='no_controls'&&!savedPage){
-      showFallback('This page loaded, but it has no choices to try. Many sites only show them after their scripts run or after you sign in.',f.url);
-    }else{
-      history.replaceState(null,'',`#review=${r.id}`);
-      open(r);
-    }
+    history.replaceState(null,'',`#review=${r.id}`);
+    open(r);
   }catch(x){
-    const s=x.detail?.status;
-    if(['blocked','login_required','unreachable'].includes(s))showFallback(captureMessage(x),f.url,{archive:s==='blocked'});
-    else showError(err,captureMessage(x),x.detail?.hint);
+    const status=x.detail?.status;
+    if(f?.url&&['blocked','login_required','unreachable'].includes(status)){
+      showFallback(captureMessage(x),f.url,{archive:status==='blocked'});
+    }else showError(err,captureMessage(x),x.detail?.hint);
+  }finally{
+    clearInterval(tick);
+    $('pr-capture').disabled=$('pr-example').disabled=false;
+    $('pr-status').textContent='';
   }
-  finally{clearInterval(tick);$('pr-capture').disabled=false;$('pr-status').textContent=''}
+}
+form.addEventListener('submit',e=>{
+  e.preventDefault();
+  if($('pr-capture').disabled)return;
+  const f=readForm();
+  if(f)createReview(()=>f);
+});
+$('pr-example').onclick=()=>createReview(async()=>{
+  const source=await fetch(API+'/sandbox/streamflix_trial/');
+  if(!source.ok)throw new Error('Could not load the example. Try again.');
+  const data=new FormData();
+  data.append('file',await source.blob(),'StreamFlix example.html');
+  const upload=await fetch(API+'/api/pages',{method:'POST',body:data});
+  if(!upload.ok)throw new Error('Could not open the saved example. Try again.');
+  return {page_id:(await upload.json()).page_id,goal:'No automatic renewal or paid add-ons'};
 });
 function captureMessage(x){
   const s=x.detail?.status;
@@ -148,9 +166,12 @@ function open(r){
   const link=$('pr-link');
   if(r.final_url.startsWith('https://saved-page.coercionguard.local/')){link.removeAttribute('href');link.textContent=`${r.url} (your saved copy)`}
   else{link.href=r.final_url;link.textContent=r.final_url.replace(/^https?:\/\//,'').replace(/\/$/,'')}
+  if(link.hasAttribute('href')&&new URL(link.href).hostname==='web.archive.org')link.append(' (archived copy)');
   const mins=Math.max(0,Math.round((r.expires_at*1000-Date.now())/60000));
   $('pr-expiry').textContent=` · private sandbox for “${r.goal}”, expires in ${mins} min`;
   $('pr-notes').replaceChildren(...r.notes.map(n=>el('li',{textContent:n})));
+  $('pr-details').hidden=!r.notes.length;
+  $('pr-shot').removeAttribute('src');
   if(r.screenshot){$('pr-shot').src='data:image/jpeg;base64,'+r.screenshot;$('pr-shot').alt=`Screenshot of ${r.title||'the page'} as captured`}
   $('pr-check').disabled=$('pr-reset').disabled=false;$('pr-work-status').textContent='';
   $('pr-event').hidden=true;
@@ -238,7 +259,7 @@ $('pr-check').onclick=async()=>{
 };
 
 // ---------- Findings ----------
-const VERDICT={conflicts:'Conflicts with your goal',fits_goal:'Fits your goal',unclear:'Unclear'};
+const VERDICT={conflicts:'Conflicts with your goal',fits_goal:'No conflict found',unclear:'Needs review'};
 const hostPath=u=>u.replace(/^https?:\/\//,'').replace(/\/$/,'');
 function renderAssessment(){
   const a=review.assessment,panel=$('pr-verdict');
@@ -267,8 +288,10 @@ function renderAssessment(){
   $('pr-rec').textContent=a.recommendation;
   $('pr-next').textContent=a.next_step;$('pr-next').hidden=!a.next_step;
   const when=new Date(a.checked_at*1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-  $('pr-engine').textContent=`${a.engine.startsWith('vultr:')?'Checked by '+a.engine.slice(6)+' on Vultr':'Checked by CoercionGuard\'s rules'} at ${when}${a.linked_page?`, including ${hostPath(a.linked_page)}`:''}.`;
-  renderReminder(a.follow_up);
+  const engine=a.analysis_mode==='rules_fallback'?'Vultr inference unavailable. Checked by CoercionGuard rules':
+    a.engine.startsWith('vultr:')?'Checked by '+a.engine.slice(6)+' on Vultr':'Checked by CoercionGuard rules';
+  $('pr-engine').textContent=`${engine} at ${when}${a.linked_page?`, including ${hostPath(a.linked_page)}`:''}.`;
+  renderReminder(review.assessment_stale?null:a.follow_up);
 }
 
 // ---------- Reminder ----------
@@ -281,36 +304,55 @@ const tz=$('pr-tz');
   $('pr-trial-end').min=new Date().toISOString().slice(0,10);
 })();
 function renderReminder(f){
-  $('pr-remind').hidden=!f;if(!f)return;
+  $('pr-remind').hidden=!f;
+  hidePreview();
+  if(!f)return;
   $('pr-remind-quote').textContent=f.evidence.excerpt;
   $('pr-remind-hint').textContent=`Use the trial end date the site shows you. ${f.hint||''}`.trim();
 }
 const reminderBody=()=>({trial_end_date:$('pr-trial-end').value,timezone:tz.value,days_before:Number($('pr-days').value)});
+function hidePreview(){
+  reminderPreview=null;
+  $('pr-event').hidden=true;
+}
+$('pr-remind-form').addEventListener('input',hidePreview);
 $('pr-remind-form').addEventListener('submit',async e=>{
   e.preventDefault();
-  const err=$('pr-remind-error');err.hidden=true;$('pr-event').hidden=true;$('pr-approved').textContent='';
+  const err=$('pr-remind-error');err.hidden=true;hidePreview();$('pr-approved').textContent='';
   if(!$('pr-trial-end').value){showError(err,'Pick the date your trial ends.');$('pr-trial-end').focus();return}
   try{
-    const {event,ics_url}=await api(`/api/reviews/${review.id}/reminder/preview`,{method:'POST',body:reminderBody()});
+    const id=review.id,input=reminderBody();
+    const {event,ics_url}=await api(`/api/reviews/${id}/reminder/preview`,{method:'POST',body:input});
+    if(review.id!==id||review.assessment_stale||JSON.stringify(reminderBody())!==JSON.stringify(input))return;
     const start=new Date(event.start.dateTime);
     $('pr-event-when').textContent=start.toLocaleString([],{weekday:'long',month:'long',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:event.start.timeZone})+` (${event.start.timeZone.replace(/_/g,' ')})`;
     $('pr-event-title').textContent=event.summary;
     $('pr-event-desc').textContent=event.description;
     $('pr-ics').href=API+ics_url;
+    reminderPreview={id,input};
+    $('pr-event-state').textContent='Proposed reminder';
     $('pr-event').hidden=false;
   }catch(x){gone(x)||showError(err,x.message)}
 });
 try{$('pr-token').value=sessionStorage.getItem('cg-op')||''}catch{}
 $('pr-approve').addEventListener('submit',async e=>{
   e.preventDefault();
+  const preview=reminderPreview;
+  if(!preview)return;
   const token=$('pr-token').value.trim(),out=$('pr-approved');
+  const button=e.currentTarget.querySelector('button');
+  button.disabled=true;
   out.textContent='Adding to the team calendar…';
   try{
-    const r=await api(`/api/reviews/${review.id}/reminder/approve`,{method:'POST',body:reminderBody(),headers:{Authorization:'Bearer '+token}});
+    const r=await api(`/api/reviews/${preview.id}/reminder/approve`,{method:'POST',body:preview.input,headers:{Authorization:'Bearer '+token}});
+    if(reminderPreview!==preview)return;
     try{sessionStorage.setItem('cg-op',token)}catch{}
+    $('pr-event-state').textContent='Added to calendar';
     const msg={created:'Added to the team calendar. ',already_created:'This reminder is already on the team calendar, so nothing was duplicated. ',restored:'The reminder was restored on the team calendar. '}[r.status]||'';
     out.replaceChildren(msg,...(r.html_link?[el('a',{href:r.html_link,target:'_blank',rel:'noopener noreferrer',textContent:'Open the event'})]:[]));
-  }catch(x){out.textContent=x.status===401?'That operator token isn\'t right.':x.message}
+  }catch(x){
+    if(reminderPreview===preview)out.textContent=x.status===401?'That operator token isn\'t right.':x.message;
+  }finally{button.disabled=false;}
 });
 
 // ---------- Reopen a sandbox from its private link ----------

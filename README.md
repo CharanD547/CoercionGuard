@@ -1,6 +1,27 @@
 # CoercionGuard
 
-A firewall that sits between a web agent and the page it's using. It finds dark patterns in the live DOM, rewrites them so the honest choice is visible, and proves it works in a side-by-side **agent battle**.
+CoercionGuard reads public pricing and trial terms, checks them against what you want to avoid, and helps you set a renewal reminder. The consent lab demonstrates how developers can check a proposed agent action against user-authorized limits before executing it.
+
+## Demo walkthrough
+
+1. Choose **Review a live page**, then use `https://www.dropbox.com/terms` and the goal **No automatic renewal**. **Try an example** loads the bundled, fictional StreamFlix page as a labeled saved copy if a live source is unavailable.
+2. Select **Check these choices**. Show the quoted renewal clause, its source, and whether the assessment used Vultr Inference or rules. A terms page can be reviewed even when it has no interactive controls.
+3. Enter a trial end date and preview the reminder. Download the calendar file or approve the team-calendar event as an operator. Open the confirmed event and retry once to verify the same event is returned.
+4. Open **For developers** to show the guard API. In the consent lab, check the $49 proposal against the $40 limit, remove the extra, and check the revised proposal.
+
+Local walkthrough captures: [opening](docs/screenshots/hackglobal-opening.png), [live terms evidence](docs/screenshots/hackglobal-live-evidence.png), and [reminder preview](docs/screenshots/hackglobal-reminder-preview.png). The captures use the local rules engine and an illustrative trial end date.
+
+```mermaid
+flowchart LR
+    UI[Astro review and consent lab] --> API[FastAPI on Vultr Compute]
+    API --> Capture[Playwright public page capture]
+    API --> Inference[Vultr Serverless Inference]
+    Inference --> Evidence[Check citations against captured sources]
+    Evidence --> UI
+    UI --> Approval[Operator approval]
+    Approval --> Calendar[Google Calendar with stable event ID]
+    UI --> Guard[Deterministic action guard]
+```
 
 ## Run it
 
@@ -19,9 +40,45 @@ uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requi
 
 Tests: `.venv/bin/python -m pytest -q`
 
-Docker (Vultr VM): `docker build -t coercionguard . && docker run -p 8000:8000 --env-file .env coercionguard`.
-The image serves the lab UI and the API on the same port. Put Caddy or Nginx in front for HTTPS, and pass WebSocket upgrades through.
-Vultr Cloud Compute can host the container and run the sandbox Chromium workload. Keep one worker while battle state lives in memory. The optional Vultr inference integration is configured separately through `.env`.
+### Deploy on Vultr Compute
+
+On the VM, copy `.env.example` to `.env` and configure `VULTR_INFERENCE_API_KEY` and `VULTR_INFERENCE_MODEL` for AI page assessments. Keep `ALLOW_PRIVATE_URLS=false` on the public deployment. Set `CORS_ORIGINS` to the public HTTPS origin if you are serving the frontend and API from one host.
+
+```bash
+docker build -t coercionguard .
+docker run -d --name coercionguard --restart unless-stopped \
+  -p 127.0.0.1:8000:8000 --env-file .env \
+  -v coercionguard-data:/app/data coercionguard
+```
+
+Proxy the public HTTPS hostname to `127.0.0.1:8000` and forward WebSocket upgrades. Keep one worker while battle state lives in memory. Check `/api/health`, run `python examples/guard_client.py https://YOUR_HOSTNAME`, and verify a bundled comparison plus a cited page assessment from the public URL before recording.
+
+## Check an agent action before execution
+
+`POST /api/v1/guard/check` checks a structured proposal against authorization supplied by your app. Open `/docs` on the running server for the request and response schema.
+
+```json
+{
+  "policy": {
+    "currency": "USD",
+    "max_immediate_charge_minor": 4000,
+    "allowed_recurring_intervals": [],
+    "allowed_data_fields": ["email"]
+  },
+  "proposal": {
+    "currency": "USD",
+    "immediate_charge_minor": 4900,
+    "recurring_interval": "none",
+    "data_fields": ["email"]
+  }
+}
+```
+
+This returns `block` with code `over_budget`. The other outcomes are `allow` when every check passes and `review_required` when facts are unknown or currencies differ. A known violation takes precedence over unknowns. Use zero for a known zero charge, `"none"` for known absence of recurring billing, an empty list for known absence of disclosures, and `null` for unknown proposal values. All proposal properties are required. Use uppercase three-letter currency codes, integer minor units, and lowercase field identifiers. Recurring intervals are `daily`, `weekly`, `monthly`, `quarterly`, and `yearly`.
+
+Build the policy from user authorization your app controls. Derive the proposal from the exact tool call your app is about to execute. Send field identifiers only. The guard trusts the supplied facts and evaluates the immediate charge, billing interval, and data field scope. Your app is responsible for checking other action details, including recurring prices and disclosure recipients. Execute only the checked action after `allow`. Recheck changes and pause on errors or timeouts. The guard neither calls the tool nor connects to the proposed site.
+
+Run `.venv\Scripts\python.exe examples/guard_client.py` on Windows to see an extra charge blocked and a corrected proposal reach a harmless local demo tool. An optional URL argument selects a different guard server.
 
 ## API
 
@@ -38,12 +95,12 @@ Vultr Cloud Compute can host the container and run the sandbox Chromium workload
 
 ### Live page reviews
 
-On the page, this is **Test a live page**, under Compare the agents. Paste a public pricing, trial, checkout or consent page (or upload a saved copy) and say what you want to avoid. Then either:
+Choose **Review a live page** on the home screen. Paste a public pricing, trial, checkout, or consent page, or upload a saved public copy. Say what you want to avoid and choose a workflow:
 
-- **Run both agents on this page.** Both agents open the real page. The protected agent's page has its dark patterns rewritten, and its choices set to match the goal (for example monthly instead of yearly billing). Each change is outlined and tagged on the page. Every submit is stopped at the network, so nothing is ever sent to the site.
-- **Try its choices myself.** CoercionGuard captures the page into a private review you can change, check against the goal, and turn into a renewal reminder.
+- **Review page** captures the source into a private review. Inspect the evidence, try captured choices, and preview a renewal reminder.
+- **Compare agents on this page** is under **More review options** and opens the existing side-by-side comparison.
 
-The bundled examples above it are unchanged.
+The bundled comparisons are also available below the consent lab.
 
 | Method | Path | What it does |
 |---|---|---|
