@@ -14,6 +14,7 @@ body{background:#e9e6da}header.shell{height:65px;border-color:#b2b3a5}#lab{paddi
 .overview .plate-front{color:var(--ink)}.overview .plate-renewal{inset:41% -10% -2% 15%}.overview .object{margin-top:-17px}
 .stage-wrap{min-width:0;position:relative;background:#202d26;border-left:1px solid #677464}.stage-wrap .exhibit{height:100%;min-height:250px}.stage-wrap .object{width:min(48%,180px);margin-top:-21px;transform:rotateX(12deg) rotateY(-17deg) rotateZ(-5deg)}.stage-wrap .plate-back{transform:translate3d(-39%,-12%,-32px) rotateZ(-9deg)}.stage-wrap .plate-front{transform:translate3d(22%,4%,31px) rotateZ(5deg)}.stage-wrap .plate-front strong{font-size:clamp(18px,2.4vw,31px);overflow-wrap:anywhere}.stage-wrap .plate-renewal{inset:58% -20% -14% 27%;transform:translate3d(23%,18%,62px) rotateZ(7deg)}.stage-wrap .plate-renewal strong{font-size:clamp(15px,2vw,24px)}.stage-wrap .exhibit[data-term-state=pause] .plate-front{transform:translate3d(17%,-14%,32px) rotateZ(3deg)}.stage-wrap .exhibit[data-term-state=pass] .plate-front{transform:translate3d(27%,2%,31px) rotateZ(4deg)}#stage-caption{position:absolute;inset:auto 0 0;margin:0;padding:8px 10px;background:#202d26;color:#e8ead6;font:11px/1.35 monospace;text-align:center}
 @media(max-width:650px){.overview{grid-template-columns:1fr}.stage-wrap{border-left:0;border-top:1px solid #677464}.stage-wrap .exhibit{min-height:205px}.stage-wrap .object{width:min(41%,153px)}}
+#facts button{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 10px}.term-outcome{font:700 10px/1.3 monospace;letter-spacing:.025em}.term-outcome[hidden]{display:none}
 </style></head>
 <body><a class="skip" href="#lab">Skip to lab</a>
 <header class="shell"><a class="brand" href="./">CoercionGuard<span>.</span></a><button id="play-opening" hidden>Replay opening <span aria-hidden="true">↺</span></button></header>
@@ -163,13 +164,22 @@ function inspect(index){
 
   [...$('facts').querySelectorAll('button')].forEach((button,i)=>{
     button.setAttribute('aria-pressed',String(i===index));
-    button.dataset.state=report?(report.checks[i].pass?'pass':'pause'):'ready';
+    const rowCheck=report?.checks[i];
+    button.dataset.state=rowCheck?(rowCheck.pass?'pass':'pause'):'ready';
+    const status=button.querySelector('.term-outcome');
+    status.textContent=rowCheck?(rowCheck.pass?'Within scope':'Outside scope'):'';
+    status.hidden=!rowCheck;
+    const [label,,value]=terms()[i];
+    button.setAttribute('aria-label','Inspect '+label+': '+value+(rowCheck?' · '+status.textContent:''));
   });
 }
 function renderTerms(){
   $('facts').replaceChildren(...terms().map(([name,,requested],i)=>{
     const row=node('div','');
-    const label=node('dt',name), cell=node('dd',''), button=node('button',requested);
+    const label=node('dt',name), cell=node('dd',''), button=node('button','');
+    const value=node('span',requested), status=node('span','');
+    status.className='term-outcome';
+    button.append(value,status);
     button.type='button';
     button.setAttribute('aria-label','Inspect '+name+': '+requested);
     button.onclick=()=>inspect(i);
@@ -207,7 +217,8 @@ $('run').onclick=()=>{
   report={fixture:name,intent,policy,action,...result,executed:false};
   $('badge').textContent=pass?'PASS':'PAUSE';$('badge').className=pass?'pass':'pause';
   $('verdict').textContent=pass?'Within user authority':'Pause for user review';
-  $('explanation').textContent=pass?'The proposal stays within the stated limits. This evaluation ends here.':'The proposal exceeds the scope the user granted.';
+  const outside=result.checks.filter(check=>!check.pass).length;
+  $('explanation').textContent=pass?'All three terms are within the user’s instruction.':outside+' of '+result.checks.length+' terms outside the user’s instruction.';
   const conflict=result.checks.findIndex(check=>!check.pass);
   inspect(conflict>=0?conflict:selected);
   $('status').textContent=result.decision+' · No action executed';
