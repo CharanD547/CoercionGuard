@@ -60,7 +60,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .chip{grid-row:1/3;align-self:stretch;width:10px;border-radius:0 3px 3px 0;background:var(--tint)}
 .term[aria-pressed=true] .chip{width:10px;box-shadow:inset 0 0 0 2px #0002}
 .term-name{font-weight:650}
-.term-value{grid-column:2;font:700 17px/1.3 var(--typed);overflow-wrap:anywhere}
+.term-pair{grid-column:2;display:flex;flex-wrap:wrap;gap:1px 8px;align-items:baseline;font:700 16px/1.3 var(--typed);overflow-wrap:anywhere}
+.term-pair .allowed{color:var(--notary);font-family:var(--sans);font-weight:700}
+.term-pair .allowed::after{content:" \2192";color:var(--ink-2);font-weight:450;padding-left:6px}
 .term-verdict{grid-column:3;grid-row:1/3;font-size:14px;font-weight:650;text-align:right;min-width:9.5em}
 .term-verdict[data-state=fail]{color:var(--stamp)}
 .term-verdict[data-state=pass]{color:var(--notary)}
@@ -85,10 +87,17 @@ button{font:inherit;color:inherit;cursor:pointer}
 .tag b{display:block;font-family:var(--typed);font-size:15px}
 .tag[data-kind=allowed] b{color:var(--notary);font-family:var(--sans);font-weight:750}
 .tag.off{opacity:0}
-.view-controls{position:absolute;right:12px;bottom:12px;display:flex;gap:6px}
+.view-controls{position:absolute;right:12px;bottom:86px;display:flex;gap:6px;z-index:3}
 .view-controls button{background:#fbfbf81f;color:#eef2ef;border:1px solid #fbfbf840;border-radius:999px;padding:6px 12px;font-size:13px}
 .view-controls button:hover{background:#fbfbf833}
-.hint{position:absolute;left:14px;bottom:14px;margin:0;color:#c9d3cf;font-size:13px;max-width:28ch}
+.hint{position:absolute;left:14px;bottom:86px;margin:0;color:#c9d3cf;font-size:13px;max-width:24ch}
+.ledger{position:absolute;left:12px;right:12px;bottom:12px;z-index:2;display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:2px 16px;align-items:end;padding:9px 14px 11px;border-radius:10px;background:#f7f6f1f4;color:var(--ink);box-shadow:0 10px 28px #0005;border-top:4px solid var(--tint,#f2b8c6)}
+.ledger p{margin:0;min-width:0}
+.ledger-term{grid-row:1/3;align-self:center;max-width:11ch;font:800 12px/1.15 var(--sans);font-stretch:118%;letter-spacing:.06em;text-transform:uppercase}
+.ledger span{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2)}
+.ledger b{display:block;font:750 18px/1.15 var(--sans);overflow-wrap:anywhere}
+#led-asked{font-family:var(--typed);font-weight:700}
+html.intro .ledger{display:none}
 
 /* 2D fallback when WebGL is unavailable or still loading */
 .paper-fallback{position:absolute;inset:0;display:grid;place-items:center}
@@ -98,7 +107,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .pf-sheet[data-term=renewal]{background:var(--pink);transform:translate(6px,6px)}
 .pf-sheet[data-term=charge]{background:var(--canary);transform:translate(3px,3px)}
 .pf-sheet.top{background:var(--sheet);display:flex;align-items:center;padding:0 7%;font:800 clamp(20px,3.6vw,40px)/1 var(--sans);font-stretch:125%}
-.pf-sheet.out{transform:translate(48%,26%) rotate(2deg)!important;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;padding:8%;font:700 15px/1.2 var(--typed)}
+.pf-sheet.out{transform:translate(28%,18%) rotate(2deg)!important;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;gap:2px;padding:8%;text-align:left}
+.pf-sheet.out b{color:var(--notary);font:750 13px/1.2 var(--sans)}
+.pf-sheet.out span{font:700 16px/1.2 var(--typed);color:var(--ink)}
 
 /* Inspector */
 .inspector{margin-top:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;padding:14px 0 0;border-top:3px solid var(--tint,var(--rule))}
@@ -157,7 +168,11 @@ footer{padding:18px clamp(16px,3vw,40px) 28px;font-size:13px;color:var(--ink-2);
   .bar{gap:10px;flex-wrap:wrap;padding-bottom:0}
   #cases{order:3;flex-basis:100%;margin:0 -16px;padding:0 6px}
   .bar .ghost{margin-left:auto}
-  .stage-slot{height:68vw;min-height:220px}
+  .stage-slot{height:78vw;min-height:300px}
+  .ledger{grid-template-columns:1fr 1fr;left:8px;right:8px;bottom:8px;gap:4px 10px}
+  .ledger-term{grid-row:auto;grid-column:1/-1;max-width:none}
+  .ledger b{font-size:16px}
+  .view-controls{top:8px;bottom:auto;right:8px}
   .term{grid-template-columns:10px minmax(0,1fr);row-gap:2px}
   .term-verdict{grid-column:2;grid-row:auto;text-align:left;min-width:0}
   .inspector{grid-template-columns:1fr 1fr}
@@ -190,13 +205,18 @@ footer{padding:18px clamp(16px,3vw,40px) 28px;font-size:13px;color:var(--ink-2);
       </div></div>
       <div class="tag off" data-kind="allowed" id="tag-allowed" aria-hidden="true"></div>
       <div class="tag off" data-kind="requested" id="tag-requested" aria-hidden="true"></div>
+      <div class="ledger" id="ledger">
+        <p class="ledger-term" id="led-term"></p>
+        <p><span>You allowed</span><b id="led-allowed"></b></p>
+        <p><span>Proposal asks</span><b id="led-asked"></b></p>
+      </div>
       <p class="hint" id="hint" hidden>Drag to turn the form. Select a copy to pull it out.</p>
       <div class="view-controls" id="view-controls" hidden><button id="reset-view" type="button">Reset view</button></div>
       <div class="intro-ui">
         <button id="skip" type="button">Skip to lab</button>
-        <p class="caption" id="cap-1">Looks free.</p>
-        <p class="caption" id="cap-2"><small>Underneath the headline</small>It renews automatically.</p>
-        <p class="caption" id="cap-3"><small>Your instruction</small>No recurring billing.</p>
+        <p class="caption" id="cap-1"><small>The proposal</small>$0 due now</p>
+        <p class="caption" id="cap-2"><small>The copy underneath</small>Auto-renewal</p>
+        <p class="caption" id="cap-3"><small>You allowed</small>Excluded</p>
       </div>
     </div>
   </div>
@@ -286,7 +306,8 @@ FIXTURES.forEach((fx,i)=>$('cases').append(el('button',{type:'button',textConten
 TERMS.forEach(t=>{
   const b=el('button',{type:'button',className:'term',onclick:()=>setState({term:t.key})});
   b.dataset.key=t.key;b.style.setProperty('--tint',t.tint);
-  b.append(el('span',{className:'chip'}),el('span',{className:'term-name',textContent:t.name}),el('span',{className:'term-value'}),el('span',{className:'term-verdict'}));
+  const pair=el('span',{className:'term-pair'},[el('span',{className:'allowed'}),el('span',{className:'asks'})]);
+  b.append(el('span',{className:'chip'}),el('span',{className:'term-name',textContent:t.name}),pair,el('span',{className:'term-verdict'}));
   $('terms').append(el('li',{},[b]));
 });
 function selectCase(i){setState({caseIndex:i,term:DEFAULT_TERM[FIXTURES[i].id],result:null})}
@@ -300,11 +321,12 @@ function render(){
   for(const b of $('terms').querySelectorAll('.term')){
     const k=b.dataset.key,check=r?.checks.find(c=>c.key===k);
     b.setAttribute('aria-pressed',String(k===state.term));
-    b.querySelector('.term-value').textContent=vals[k].requested;
+    b.querySelector('.allowed').textContent=vals[k].allowed;
+    b.querySelector('.asks').textContent=vals[k].requested;
     const v=b.querySelector('.term-verdict');
     v.dataset.state=check?(check.pass?'pass':'fail'):'pending';
     v.textContent=check?(check.pass?'✓ Within scope':'✕ Outside scope'):'Not checked';
-    b.setAttribute('aria-label',`${TERMS.find(t=>t.key===k).name}: proposal asks ${vals[k].requested}. ${v.textContent}`);
+    b.setAttribute('aria-label',`${TERMS.find(t=>t.key===k).name}: you allowed ${vals[k].allowed}, proposal asks ${vals[k].requested}. ${v.textContent}`);
   }
   const verdict=$('verdict');
   verdict.dataset.state=r?(r.decision==='WITHIN POLICY'?'pass':'fail'):'pending';
@@ -315,6 +337,10 @@ function render(){
   $('ins-title').textContent=t.name;
   $('ins-allowed').textContent=vals[state.term].allowed;
   $('ins-requested').textContent=vals[state.term].requested;
+  $('ledger').style.setProperty('--tint',t.tint);
+  $('led-term').textContent=t.name;
+  $('led-allowed').textContent=vals[state.term].allowed;
+  $('led-asked').textContent=vals[state.term].requested;
   const it=$('ins-term');
   it.dataset.state=check?(check.pass?'pass':'fail'):'pending';
   it.textContent=check?(check.pass?'Within scope':'Outside scope'):'Not checked';
@@ -326,7 +352,8 @@ function render(){
   $('exhibit').setAttribute('aria-label',`Carbon-copy form for ${fx.name}. ${t.name} copy pulled out: you allowed ${vals[state.term].allowed}, proposal asks ${vals[state.term].requested}.`);
   $('pf-top').textContent=fx.headline;
   document.querySelectorAll('.pf-sheet[data-term]').forEach(s=>{
-    const on=s.dataset.term===state.term;s.classList.toggle('out',on);s.textContent=on?vals[s.dataset.term].requested:'';
+    const on=s.dataset.term===state.term;s.classList.toggle('out',on);
+    s.replaceChildren(...(on?[el('b',{textContent:'You allowed '+vals[s.dataset.term].allowed}),el('span',{textContent:vals[s.dataset.term].requested})]:[]));
   });
 }
 
@@ -419,16 +446,16 @@ function createScene(THREE,host){
     const g=new THREE.Group();g.add(mesh);rig.add(g);return {g,mesh,tex};
   }
 
-  const STACK_X=-.9,PULL_X=1.9;
+  const STACK_X=-1.05,PULL_X=.2,PULL_Z=.5;
   const layers={},TAB_Y={charge:.6,renewal:0,data:-.6},BASE_Y={charge:.18,renewal:.12,data:.06};
   for(const t of TERMS){layers[t.key]=sheet(t.tint,TAB_Y[t.key],W+TAB);layers[t.key].mesh.userData.term=t.key}
   const top=sheet('#fbfbf8',null,W);
 
   // Acetate: the user's instruction, printed on clear film.
   const acetate=new THREE.Group();rig.add(acetate);
-  const film=new THREE.Mesh(new THREE.BoxGeometry(1.7,.008,1.15),new THREE.MeshPhysicalMaterial({color:'#e9f4f0',transparent:true,opacity:.2,roughness:.08,clearcoat:1,clearcoatRoughness:.05,depthWrite:false}));
-  const printTex=canvasTex(680,460);
-  const print=new THREE.Mesh(new THREE.PlaneGeometry(1.7,1.15),new THREE.MeshBasicMaterial({map:printTex.t,transparent:true,depthWrite:false}));
+  const film=new THREE.Mesh(new THREE.BoxGeometry(1.85,.008,1.2),new THREE.MeshPhysicalMaterial({color:'#d7ebe4',transparent:true,opacity:.34,roughness:.08,clearcoat:1,clearcoatRoughness:.05,depthWrite:false}));
+  const printTex=canvasTex(740,480);
+  const print=new THREE.Mesh(new THREE.PlaneGeometry(1.85,1.2),new THREE.MeshBasicMaterial({map:printTex.t,transparent:true,depthWrite:false}));
   print.rotation.x=-Math.PI/2;print.position.y=.006;acetate.add(film,print);
 
   function drawLayer(t,vals){
@@ -436,13 +463,10 @@ function createScene(THREE,host){
     paper(ctx,w,h,t.tint);
     ctx.strokeStyle='#00000018';ctx.lineWidth=2;
     for(let y=-.9;y<.75;y+=.22){ctx.beginPath();ctx.moveTo(px(-1.4),py(y));ctx.lineTo(px(1.4),py(y));ctx.stroke()}
-    ctx.fillStyle='#18211e';ctx.font='650 30px Archivo';ctx.fillText(t.name,px(-1.02),py(.82));
-    ctx.font='400 20px Archivo';ctx.fillStyle='#18211ea0';ctx.fillText('Copy for your records',px(-1.02),py(.7));
-    // Field that sits under the acetate when this copy is pulled out.
-    ctx.strokeStyle='#18211e66';ctx.lineWidth=2;ctx.strokeRect(px(.08),py(.25),1.32*S,.95*S);
-    ctx.fillStyle='#18211eb0';ctx.font='500 22px Archivo';ctx.fillText('Proposal asks',px(.14),py(.08));
+    ctx.fillStyle='#18211e';ctx.font='650 28px Archivo';ctx.fillText(t.name,px(-1.28),py(.78));
+    ctx.font='500 22px Archivo';ctx.fillStyle='#18211eb0';ctx.fillText('Proposal asks',px(-1.28),py(.15));
     ctx.fillStyle='#18211e';const v=vals[t.key].requested;
-    const size=fit(ctx,v,s=>`700 ${s}px "Courier Prime"`,1.2*S,58);ctx.fillText(v,px(.14),py(-.42));
+    const size=fit(ctx,v,s=>`700 ${s}px "Courier Prime"`,2.35*S,86);ctx.font=`700 ${size}px "Courier Prime"`;ctx.fillText(v,px(-1.28),py(-.42));
     ctx.save();ctx.fillStyle='#18211e';ctx.font='650 22px Archivo';ctx.textAlign='center';
     ctx.fillText(t.tab,px(W/2+TAB/2-.02),py(TAB_Y[t.key])+8);ctx.restore();
     tex.needsUpdate=true;
@@ -450,9 +474,9 @@ function createScene(THREE,host){
   function drawTop(fx,result){
     const {ctx,c,t:tex}=top.tex,w=c.width,h=c.height;
     paper(ctx,w,h,'#fbfbf8');
-    ctx.fillStyle='#18211e99';ctx.font='500 24px Archivo';ctx.fillText(fx.action.label,60,90);
-    ctx.fontStretch='expanded';const size=fit(ctx,fx.headline,s=>`800 ${s}px Archivo`,w-120,150);
-    ctx.fillStyle='#18211e';ctx.font=`800 ${size}px Archivo`;ctx.fillText(fx.headline,56,h/2+size*.32);
+    ctx.fillStyle='#18211e99';ctx.font='500 28px Archivo';ctx.fillText('Proposal',60,100);
+    ctx.fontStretch='expanded';const size=fit(ctx,fx.headline,s=>`800 ${s}px Archivo`,w*.42,128);
+    ctx.fillStyle='#18211e';ctx.font=`800 ${size}px Archivo`;ctx.textAlign='right';ctx.fillText(fx.headline,w-36,h*.58);ctx.textAlign='left';
     ctx.fontStretch='normal';ctx.fillStyle='#18211e22';for(let i=0;i<4;i++)ctx.fillRect(60,h-150+i*26,(w-120)*(i===3?.5:1),8);
     if(result){
       const pass=result.decision==='WITHIN POLICY',col=pass?'#1f4ea8':'#b3243f',label=pass?'WITHIN POLICY':'REVIEW REQUIRED';
@@ -465,11 +489,11 @@ function createScene(THREE,host){
     const {ctx,c,t:tex}=printTex,w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
     ctx.strokeStyle='#1f4ea8cc';ctx.lineWidth=3;ctx.strokeRect(10,10,w-20,h-20);
     for(const [x,y] of [[10,10],[w-10,10],[10,h-10],[w-10,h-10]]){ctx.beginPath();ctx.moveTo(x-8,y);ctx.lineTo(x+8,y);ctx.moveTo(x,y-8);ctx.lineTo(x,y+8);ctx.stroke()}
-    ctx.fillStyle='#1f4ea8';ctx.font='600 26px Archivo';ctx.fillText('You allowed',36,58);
-    const v=vals[term].allowed,size=fit(ctx,v,s=>`750 ${s}px Archivo`,w*.5,58);ctx.font=`750 ${size}px Archivo`;ctx.fillText(v,36,58+size+6);
-    const stamp=check?(check.pass?['Within scope','#1f4ea8']:['Outside scope','#b3243f']):hint?['Not what you allowed','#b3243f']:null;
-    if(stamp){ctx.save();ctx.translate(w-36,96);ctx.rotate(-.05);ctx.fillStyle=stamp[1];ctx.strokeStyle=stamp[1];ctx.lineWidth=4;ctx.font='800 30px Archivo';ctx.textAlign='right';
-      const tw=ctx.measureText(stamp[0]).width;ctx.strokeRect(-tw-16,-34,tw+32,48);ctx.fillText(stamp[0],0,0);ctx.restore()}
+    ctx.fillStyle='#1f4ea8';ctx.font='650 28px Archivo';ctx.fillText('You allowed',32,64);
+    const v=vals[term].allowed,size=fit(ctx,v,s=>`800 ${s}px Archivo`,w-64,84);ctx.font=`800 ${size}px Archivo`;ctx.fillText(v,32,64+size+10);
+    const stamp=check?(check.pass?['Within scope','#1f4ea8']:['Outside scope','#b3243f']):hint?['Outside the instruction','#b3243f']:null;
+    if(stamp){ctx.save();ctx.fillStyle=stamp[1];ctx.strokeStyle=stamp[1];ctx.lineWidth=4;ctx.font='800 26px Archivo';
+      const tw=ctx.measureText(stamp[0]).width;ctx.strokeRect(28,h-78,tw+28,48);ctx.fillText(stamp[0],42,h-46);ctx.restore()}
     tex.needsUpdate=true;
   }
 
@@ -485,28 +509,36 @@ function createScene(THREE,host){
     layerState[t.key]={pos:L.g.position.clone(),target:L.g.position.clone(),rot:0,rotT:0,k:4};
   }
   top.g.position.set(STACK_X,.24,0);
-  const acetateState={pos:v3(PULL_X+.74,2.6,.275),target:v3(PULL_X+.74,.62,.275),op:0,opT:1,k:4};
+  const acetateHome=()=>v3(PULL_X+.62,.68,PULL_Z-.08);
+  const acetateState={pos:acetateHome(),target:acetateHome(),op:0,opT:1,k:4};
   acetate.position.copy(acetateState.pos);
   let yaw=0,yawT=0,pitch=0,pitchT=0,instant=false;
 
-  function lab(aspect){
-    const look=v3(.75,.25,.15),dir=v3(.12,.82,1).normalize();
+  function fitDist(aspect,width,height){
     const v=THREE.MathUtils.degToRad(camera.fov),hf=2*Math.atan(Math.tan(v/2)*aspect);
-    const d=Math.max(3.45/Math.tan(hf/2),2.1/Math.tan(v/2))*1.02;
-    return {pos:look.clone().addScaledVector(dir,d),look,up:v3(0,1,0)};
+    return Math.max(width/Math.tan(hf/2),height/Math.tan(v/2));
   }
-  function poseA(aspect){const v=THREE.MathUtils.degToRad(camera.fov),hf=2*Math.atan(Math.tan(v/2)*aspect);
-    const d=Math.max(1.9/Math.tan(hf/2),1.75/Math.tan(v/2)),look=v3(STACK_X+.3,.24,.55);return {pos:v3(look.x,.24+d,look.z+.001),look,up:v3(0,0,-1)}}
-  function poseB(aspect){const look=v3(1.3,.35,.5),dir=v3(.85,.42,1).normalize();return {pos:look.clone().addScaledVector(dir,7.6/Math.min(1.6,Math.max(.8,aspect))),look,up:v3(0,1,0)}}
+  function lab(aspect){
+    const look=v3(PULL_X-.15,.36,PULL_Z-.2),dir=v3(.04,.86,1).normalize();
+    return {pos:look.clone().addScaledVector(dir,fitDist(aspect,2.15,1.55)*1.06),look,up:v3(0,1,0)};
+  }
+  function poseA(aspect){
+    const look=v3(STACK_X,.26,0),d=fitDist(aspect,W*.56,H*.52);
+    return {pos:v3(look.x,look.y+d,look.z+.01),look,up:v3(0,0,-1)};
+  }
+  function poseB(aspect){
+    const look=v3(PULL_X-.35,.4,PULL_Z),dir=v3(.2,.48,1).normalize();
+    return {pos:look.clone().addScaledVector(dir,fitDist(aspect,1.7,1.15)),look,up:v3(0,1,0)};
+  }
   function aimCamera(p,snap){tCam.pos.copy(p.pos);tCam.look.copy(p.look);tCam.up.copy(p.up);if(snap){cam.pos.copy(p.pos);cam.look.copy(p.look);cam.up.copy(p.up)}invalidate()}
 
   function pull(term,snap){
     for(const t of TERMS){
       const st=layerState[t.key],out=t.key===term;
-      st.target.set(out?PULL_X:STACK_X,out?.38:BASE_Y[t.key],out?.05:0);st.rotT=out?-.06:0;
+      st.target.set(out?PULL_X:STACK_X,out?.42:BASE_Y[t.key],out?PULL_Z:0);st.rotT=out?-.04:0;
       if(snap){st.pos.copy(st.target);st.rot=st.rotT}
     }
-    acetateState.target.set(PULL_X+.74,.62,.275);
+    acetateState.target.copy(acetateHome());
     if(snap)acetateState.pos.copy(acetateState.target);
     invalidate();
   }
@@ -524,9 +556,9 @@ function createScene(THREE,host){
   }
 
   // Projected HTML tags keep the two compared values crisp at any size.
-  const tagAllowed=$('tag-allowed'),tagReq=$('tag-requested'),tags={term:null,vals:null,on:true};
+  const tagAllowed=$('tag-allowed'),tagReq=$('tag-requested'),tags={term:null,vals:null,on:false};
   function placeTags(){
-    const w=host.clientWidth,h=host.clientHeight,show=tags.on&&w>=520&&tags.vals;
+    const w=host.clientWidth,h=host.clientHeight,show=tags.on&&w>=680&&h>=420&&tags.vals;
     tagAllowed.classList.toggle('off',!show);tagReq.classList.toggle('off',!show);if(!show)return;
     const v=tags.vals[tags.term];
     tagAllowed.replaceChildren('You allowed',el('b',{textContent:v.allowed}));
@@ -551,7 +583,7 @@ function createScene(THREE,host){
       if(st.pos.distanceTo(st.target)>1e-4||Math.abs(st.rotT-st.rot)>1e-4)moving=true}
     const fa=ease(acetateState.k,dt);acetateState.pos.lerp(acetateState.target,fa);acetateState.op+=(acetateState.opT-acetateState.op)*fa;
     acetate.position.copy(acetateState.pos);acetate.rotation.y=-.06;
-    film.material.opacity=.2*acetateState.op;print.material.opacity=acetateState.op;
+    film.material.opacity=.34*acetateState.op;print.material.opacity=acetateState.op;
     if(acetateState.pos.distanceTo(acetateState.target)>1e-4||Math.abs(acetateState.opT-acetateState.op)>1e-3)moving=true;
     const fy=ease(6,dt);yaw+=(yawT-yaw)*fy;pitch+=(pitchT-pitch)*fy;rig.rotation.set(pitch,yaw,0);
     rig.position.set(0,0,0);if(Math.abs(yawT-yaw)>1e-4||Math.abs(pitchT-pitch)>1e-4)moving=true;
@@ -596,13 +628,14 @@ function createScene(THREE,host){
     introHint=true;drawAcetate('renewal',vals,null,true);
     current={caseIndex:0,term:null,result:null};
     for(const t of TERMS){const st=layerState[t.key];st.target.set(STACK_X,BASE_Y[t.key],0);st.pos.copy(st.target);st.rot=st.rotT=0;st.k=3.2}
-    acetateState.pos.set(PULL_X+.74,2.8,.275);acetateState.target.copy(acetateState.pos);acetateState.op=acetateState.opT=0;
+    const parked=acetateHome();parked.y=2.8;
+    acetateState.pos.copy(parked);acetateState.target.copy(parked);acetateState.op=acetateState.opT=0;
     aimCamera(poseA(camera.aspect),true);tCam.k=2.4;
     return {
-      reveal(){layerState.renewal.target.set(PULL_X,.38,.05);layerState.renewal.rotT=-.06;aimCamera(poseB(camera.aspect),false)},
-      compare(){acetateState.target.set(PULL_X+.74,.62,.275);acetateState.opT=1;acetateState.k=3.6;tCam.k=2;aimCamera(lab(camera.aspect),false)},
-      finish(fast){mode='lab';introHint=false;tags.on=true;tCam.k=3;for(const t of TERMS)layerState[t.key].k=4;acetateState.k=4;acetateState.opT=1;
-        if(fast){acetateState.op=1;acetateState.target.set(PULL_X+.74,.62,.275);acetateState.pos.copy(acetateState.target)}
+      reveal(){layerState.renewal.target.set(PULL_X,.42,PULL_Z);layerState.renewal.rotT=-.04;aimCamera(poseB(camera.aspect),false)},
+      compare(){acetateState.target.copy(acetateHome());acetateState.opT=1;acetateState.k=3.6;tCam.k=2.2;aimCamera(lab(camera.aspect),false)},
+      finish(fast){mode='lab';introHint=false;tags.on=false;tCam.k=3;for(const t of TERMS)layerState[t.key].k=4;acetateState.k=4;acetateState.opT=1;
+        if(fast){acetateState.op=1;acetateState.target.copy(acetateHome());acetateState.pos.copy(acetateState.target)}
         aimCamera(lab(camera.aspect),fast)},
     };
   }
@@ -627,9 +660,9 @@ async function playIntro(){
   let done;const finished=new Promise(r=>done=r);
   const at=(ms,fn)=>timers.push(setTimeout(fn,ms));
   cap(0);
-  at(900,()=>{cap(1);beats.reveal()});
-  at(1950,()=>{cap(2);beats.compare()});
-  at(2900,()=>land(false));
+  at(1000,()=>{cap(1);beats.reveal()});
+  at(2100,()=>{cap(2);beats.compare()});
+  at(3400,()=>land(false));
   function land(fast){
     timers.forEach(clearTimeout);cap(-1);
     // Restore whatever the visitor had before the replay; the free-trial renewal copy is the anchor on first visit.
