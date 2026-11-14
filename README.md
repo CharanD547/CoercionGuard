@@ -36,6 +36,35 @@ Vultr Cloud Compute can host the container and run the sandbox Chromium workload
 | WS | `/ws/battles/{id}` | Streams battle events, replaying past ones on connect |
 | GET | `/sandbox/{id}/` | The raw trap page (for an iframe in the frontend) |
 
+### Live page reviews
+
+On the page, this is **Test a live page**, under Compare the agents. Paste a public pricing, trial, checkout or consent page (or upload a saved copy) and say what you want to avoid. Then either:
+
+- **Run both agents on this page.** Both agents open the real page. The protected agent's page has its dark patterns rewritten, and its choices set to match the goal (for example monthly instead of yearly billing). Each change is outlined and tagged on the page. Every submit is stopped at the network, so nothing is ever sent to the site.
+- **Try its choices myself.** CoercionGuard captures the page into a private review you can change, check against the goal, and turn into a renewal reminder.
+
+The bundled examples above it are unchanged.
+
+| Method | Path | What it does |
+|---|---|---|
+| POST | `/api/battles` | Also takes `{"url": "https://…", "goal": "…"}` or `{"page_id": "…", "goal": "…"}` to run both agents on a live or uploaded page. Bot checks, sign-in pages and pages with no choices or prices end with a lane `error` saying why. |
+| POST | `/api/pages` | Multipart `file`: a page the user saved in their own browser (Chrome: Save page as → Webpage, Complete). Returns a `page_id`. Scripts are removed; only its images and styles may load. |
+| GET | `/api/archive?url=…` | The Internet Archive's latest copy of a page (`url`, `date`), for sites that block automated browsers |
+| POST | `/api/reviews` | `{"url": "https://…", "goal": "…"}` or `{"page_id": "…", "goal": "…"}` → `201` with a private `id`, `status`, the captured `controls` (checkboxes, plan options, menus) with `defaults`, price labels, links and a `screenshot`. Sign-in pages, bot checks and unreachable pages return `422` with `detail.status` (`login_required`, `blocked`, `unreachable`, `rejected`) and a hint. |
+| GET | `/api/reviews/{id}` | The review (add `?screenshot=false` to skip the image) |
+| PATCH | `/api/reviews/{id}/selections` | `{"selections": {"c1": false, "c2": "c2o1"}}`. Returns `totals`: the price change, computed only when the captured labels state the amounts, otherwise `known: false` with a reason |
+| POST | `/api/reviews/{id}/reset` | Back to the page defaults |
+| POST | `/api/reviews/{id}/check` | Optional `selections`, then an assessment of the current choices against the goal: `conflicts` with evidence quotes, `unverified` claims whose quotes weren't found in the capture, `recommendation`, `next_step`, and a renewal `follow_up` when the renewal terms are cited |
+| POST | `/api/reviews/{id}/reminder/preview` | `{"trial_end_date": "YYYY-MM-DD", "timezone": "America/New_York", "days_before": 2}` → the event and an `.ics` link |
+| GET | `/api/reviews/{id}/reminder.ics` | Same query fields; downloads the reminder |
+| POST | `/api/reviews/{id}/reminder/approve` | Operator only (`Authorization: Bearer $OPERATOR_TOKEN`). Creates the event on the team Google Calendar with a stable ID, so a retry returns the same event |
+
+- Billing choices are recognised as native radios, `role="radio"` options, toggle switches between two labels, segmented or tab buttons, class-marked options (`selected`), checkbox switches and single buttons that hold both periods.
+- Each capture runs in a fresh browser context with no cookies. Every request, including each redirect hop and subresource, must resolve to a public address. Captures are capped at `CAPTURE_TIMEOUT_SECONDS` and `capture_max_bytes`.
+- Reviews live in memory for `REVIEW_TTL_SECONDS` (one hour) and are reachable only by their ID. Only operator calendar receipts are kept, in `data/receipts.json`.
+- With `VULTR_INFERENCE_API_KEY` set, a Vultr model writes the assessment and may read one more page linked from the captured one. Page content is passed as data, and the model's only tool is that read. Without a key, a rule-based reader does the same job.
+- Calendar approval needs `OPERATOR_TOKEN`, `GOOGLE_CALENDAR_ID`, and `GOOGLE_SERVICE_ACCOUNT_JSON` for a service account the calendar is shared with ("Make changes to events").
+
 ### Battle events (WebSocket)
 
 Each event has a `type`, plus a `lane` (`unprotected` / `protected`) where it applies:

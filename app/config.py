@@ -25,6 +25,17 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 20
     allow_private_urls: bool = False
 
+    # Live page reviews
+    review_ttl_seconds: int = 3600
+    capture_timeout_seconds: int = 35
+    capture_max_bytes: int = 15_000_000  # total response bytes per capture
+
+    # Reminder approval: operator token and the team calendar (service account JSON, inline or a file path)
+    operator_token: str = ""
+    google_calendar_id: str = ""
+    google_service_account_json: str = ""
+    receipts_path: str = "data/receipts.json"
+
     cors_origins: str = "*"
 
 

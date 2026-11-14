@@ -71,7 +71,9 @@
   const URGENCY = /(only \d+ (left|remaining|seats?)|offer ends|ends in|expires in|hurry|limited time|\d+ (people|others) (are )?(viewing|looking)|last chance|selling fast|\b\d{1,2}:\d{2}(:\d{2})?\b)/i;
   const DOUBLE_NEG = /(uncheck|untick|deselect|do not|don'?t).{0,40}\b(not|no|don'?t|opt[- ]?out)\b/i;
   const FEE = /(service|convenience|booking|processing|handling|platform) fee/i;
-  const SOCIAL = /\b(?:join\s+\d|\d[\d,.]*\+?\s+(?:people|customers|users|marketers|shoppers|buyers|others)|trusted by\b|bestseller)\b/i;
+  // Crowd claims with a number or a ranking that a reader can't check. A "Trusted by" logo bar
+  // shows who the customers are, so it isn't flagged.
+  const SOCIAL = /\b(?:join(?:ed)?\s+(?:over\s+)?\d[\d,.]*[km]?\+?\s+\w+|\d[\d,.]*[km]?\+?\s+(?:happy\s+)?(?:people|customers|users|marketers|shoppers|buyers|others)\s+(?:have\s+)?(?:bought|joined|signed up|switched|chose|ordered|are (?:using|buying|viewing))|best[- ]?seller|#1\s+(?:best|most|top|rated|selling))/i;
 
   const all = Array.from(document.querySelectorAll("body *")).filter(visible);
   let hiddenCost = "";
@@ -114,12 +116,18 @@
   }
 
   // 3. False urgency (countdowns, scarcity claims) and unverified crowd claims.
+  const crowd = [];
   for (const el of all) {
     if (el.children.length > 2) continue;
     const t = text(el);
     if (!t || t.length >= 160) continue;
     if (URGENCY.test(t)) add("false_urgency", el, "Urgency/scarcity claim");
-    else if (SOCIAL.test(t)) add("social_proof", el, "Popularity claim with no source a reader can check");
+    else if (SOCIAL.test(t) && !el.matches("h1, h2, h3") && !el.querySelector("h1, h2, h3")) crowd.push(el);
+  }
+  for (const el of crowd) {
+    if (!crowd.some((other) => other !== el && el.contains(other))) {
+      add("social_proof", el, "Popularity claim with no source a reader can check");
+    }
   }
 
   // A headline that says "free" while a recurring charge is buried elsewhere.

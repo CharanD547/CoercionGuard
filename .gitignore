@@ -5,3 +5,4 @@ __pycache__/
 frontrend/node_modules/
 frontrend/dist/
 frontrend/.astro/
+data/

@@ -19,6 +19,7 @@ OBSERVE_JS = (Path(__file__).parent / "js" / "observe.js").read_text(encoding="u
 PRICE = re.compile(r"([$€£₹]\s?\d[\d,.]*)")
 RECURRING = re.compile(r"(/\s?(mo|month|yr|year)|per (month|year)|renews|auto[- ]?renew|after .{0,10}trial)", re.I)
 DISMISS = re.compile(r"(maybe later|not now|close|dismiss|no thanks|^×$|^x$)", re.I)
+CTA = re.compile(r"\b(buy|start|try|subscribe|get started|continue|checkout|check out|sign up|join|choose|select|upgrade|book|download|claim)\b", re.I)
 STOPWORDS = {"the", "a", "an", "to", "for", "of", "with", "without", "any", "and", "or", "no", "my", "up", "on", "anything"}
 
 
@@ -72,7 +73,11 @@ def heuristic_decide(goal: str, obs: dict) -> dict:
             continue
         label = c["label"].lower()
         hits = sum(1 for t in terms if t in label)
+        if c.get("in_chrome") or c.get("is_choice") or len(label) > 60 or label.endswith("?"):
+            continue  # menus, footers and long text links aren't the page's offer
         score = math.log(max(c["area"], 1)) + 3 * hits + (1 if c["is_submit"] else 0)
+        score += 2 if CTA.search(label) else 0
+        score -= 0 if c.get("button_like", True) else 3
         if avoid_cost and PRICE.search(c["label"]) and RECURRING.search(c["label"]):
             score -= 8  # the agent can only avoid a cost it can see
         if "[ad]" in label:
@@ -149,7 +154,11 @@ async def act(page: Page, decision: dict) -> None:
     sel = f'[data-cg-id="{decision.get("id")}"]'
     match decision["action"]:
         case "click":
-            await page.click(sel)
+            try:
+                await page.click(sel, timeout=5000)
+            except Exception:
+                # Covered or off-screen (common on saved copies without their scripts): click the element itself.
+                await page.eval_on_selector(sel, "el => el.click()")
         case "check":
             await page.check(sel)
         case "uncheck":

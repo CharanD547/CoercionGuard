@@ -22,6 +22,13 @@
       area: Math.round(r.width * r.height), font_px: parseFloat(s.fontSize),
       is_submit: !!el.form && (el.type === "submit" || el.tagName === "BUTTON" && !el.getAttribute("type")),
       in_overlay: !!(overlay && overlay.contains(el)),
+      // Site menus, headers and footers aren't where a page asks you to agree to something.
+      in_chrome: !!el.closest("nav, header, footer, [role=navigation], [role=banner], [role=contentinfo]"),
+      // Plan or billing toggles are choices, not the action that commits to them.
+      is_choice: !!(el.dataset.cgCtl || el.dataset.cgOpt) || /^(radio|tab|switch|option|menuitemradio)$/.test(el.getAttribute("role") || "") || el.hasAttribute("aria-pressed")
+        || el.hasAttribute("aria-selected") || el.hasAttribute("aria-expanded") || el.tagName === "SUMMARY"
+        || !!el.closest("[role=radiogroup], [role=tablist], fieldset, details"),
+      button_like: el.tagName !== "A" || /\b(btn|button|cta)\b/i.test(el.className || "") || parseFloat(s.paddingTop) + parseFloat(s.paddingBottom) >= 12,
     });
   }
   for (const el of document.querySelectorAll("input[type=checkbox], input[type=radio]")) {

@@ -12,16 +12,16 @@ def enabled() -> bool:
     return bool(get_settings().vultr_inference_api_key)
 
 
-async def chat_json(system: str, user: str) -> dict:
+async def chat_json(system: str, user: str, *, max_tokens: int = 300) -> dict:
     s = get_settings()
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(
             f"{s.vultr_inference_base_url}/chat/completions",
             headers={"Authorization": f"Bearer {s.vultr_inference_api_key}"},
             json={
                 "model": s.vultr_inference_model,
                 "temperature": 0,
-                "max_tokens": 300,
+                "max_tokens": max_tokens,
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
             },
         )

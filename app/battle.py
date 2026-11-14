@@ -20,8 +20,9 @@ MAX_STORED_BATTLES = 200
 @dataclass
 class Battle:
     id: str
-    sandbox_id: str
+    sandbox_id: str | None
     goal: str
+    url: str | None = None  # set for a live page; sandbox_id is None then
     status: str = "queued"  # queued | running | finished | error
     created_at: float = field(default_factory=time.time)
     events: list[dict] = field(default_factory=list)
@@ -46,7 +47,7 @@ class Battle:
 
     def summary(self) -> dict:
         return {
-            "id": self.id, "sandbox_id": self.sandbox_id, "goal": self.goal,
+            "id": self.id, "sandbox_id": self.sandbox_id, "url": self.url, "goal": self.goal,
             "status": self.status, "created_at": self.created_at, "results": self.results,
         }
 
@@ -71,9 +72,11 @@ def compare_lanes(results: dict) -> dict:
     }
 
 
-def create_battle(sandbox_id: str, goal: str | None) -> Battle:
-    box = sandbox.SANDBOXES[sandbox_id]
-    b = Battle(id=uuid.uuid4().hex[:12], sandbox_id=sandbox_id, goal=goal or box["goal"])
+def create_battle(sandbox_id: str | None, goal: str | None, url: str | None = None) -> Battle:
+    if url:
+        b = Battle(id=uuid.uuid4().hex[:12], sandbox_id=None, goal=goal or "", url=url)
+    else:
+        b = Battle(id=uuid.uuid4().hex[:12], sandbox_id=sandbox_id, goal=goal or sandbox.SANDBOXES[sandbox_id]["goal"])
     battles[b.id] = b
     if len(battles) > MAX_STORED_BATTLES:
         battles.pop(next(iter(battles)))
@@ -82,9 +85,9 @@ def create_battle(sandbox_id: str, goal: str | None) -> Battle:
 
 async def run_battle(b: Battle) -> None:
     b.status = "running"
-    b.emit({"type": "battle_started", "sandbox_id": b.sandbox_id, "goal": b.goal, "queue_position": pool.queued})
+    b.emit({"type": "battle_started", "sandbox_id": b.sandbox_id, "url": b.url, "goal": b.goal, "queue_position": pool.queued})
     try:
-        await asyncio.gather(*(_run_lane(b, lane) for lane in LANES))
+        await asyncio.gather(*((_run_live(b, lane) if b.url else _run_lane(b, lane)) for lane in LANES))
     except Exception as e:
         log.exception("battle %s failed", b.id)
         b.status = "error"
@@ -170,3 +173,18 @@ async def _run_lane(b: Battle, lane: str) -> None:
             "findings_count": len(findings), "fixes_count": len(fixes),
         }
         b.emit({"type": "lane_finished", "lane": lane, **b.results[lane]})
+
+
+async def _run_live(b: Battle, lane: str) -> None:
+    from .live_battle import PageUnavailable, run_live_lane
+
+    try:
+        b.results[lane] = await asyncio.wait_for(run_live_lane(b, lane), timeout=120)
+    except Exception as e:
+        if isinstance(e, PageUnavailable):
+            log.info("live lane %s of battle %s: %s", lane, b.id, e)
+        else:
+            log.exception("live lane %s of battle %s failed", lane, b.id)
+        msg = "The page took too long to load in our browser." if isinstance(e, asyncio.TimeoutError) else str(e).splitlines()[0][:200]
+        b.results[lane] = {"receipt": None, "manipulated": True, "error": msg, "findings_count": 0, "fixes_count": 0}
+    b.emit({"type": "lane_finished", "lane": lane, **b.results[lane]})

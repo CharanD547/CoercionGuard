@@ -74,6 +74,7 @@
         break;
       }
       case "social_proof":
+        if (el.querySelector("h1, h2, h3")) break;  // never wipe a page's headline with the claim
         el.textContent = "(unverified popularity claim removed)";
         el.style.cssText += ";color:#555!important;font-size:12px!important;font-weight:500!important;";
         fixes.push({ type: f.type, element_id: f.element_id, action: "Removed unverified social-proof claim" });
