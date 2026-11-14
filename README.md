@@ -1,15 +1,17 @@
 # CoercionGuard
 
+[Full API reference](API.md) · [Release improvements](improvements.md)
+
 CoercionGuard reads public pricing and trial terms, checks them against what you want to avoid, and helps you set a renewal reminder. The consent lab demonstrates how developers can check a proposed agent action against user-authorized limits before executing it.
 
 ## Demo walkthrough
 
-1. Choose **Review a live page**, then use `https://www.dropbox.com/terms` and the goal **No automatic renewal**. **Try an example** loads the bundled, fictional StreamFlix page as a labeled saved copy if a live source is unavailable.
-2. Select **Check these choices**. Show the quoted renewal clause, its source, and whether the assessment used Vultr Inference or rules. A terms page can be reviewed even when it has no interactive controls.
+1. Choose **Open consent lab**. Under **Compare the agents**, use **Test a live page** with a public page that has interactive choices, such as `https://www.dropbox.com/plans`, and set your goal.
+2. Choose **Try its choices myself**, then **Check these choices**. Show the quoted evidence, its source, and whether the assessment used Vultr Inference or rules. Terms-only pages can be reviewed directly through the review API.
 3. Enter a trial end date and preview the reminder. Download the calendar file or approve the team-calendar event as an operator. Open the confirmed event and retry once to verify the same event is returned.
-4. Open **For developers** to show the guard API. In the consent lab, check the $49 proposal against the $40 limit, remove the extra, and check the revised proposal.
+4. Open `/docs` to show the guard API. Use [the example client](examples/guard_client.py) to check a $49 proposal against a $40 limit, then check the corrected $40 proposal.
 
-Local walkthrough captures: [opening](docs/screenshots/hackglobal-opening.png), [live terms evidence](docs/screenshots/hackglobal-live-evidence.png), and [reminder preview](docs/screenshots/hackglobal-reminder-preview.png). The captures use the local rules engine and an illustrative trial end date.
+Archived captures from the HackGlobal redesign: [opening](docs/screenshots/hackglobal-opening.png), [live terms evidence](docs/screenshots/hackglobal-live-evidence.png), and [reminder preview](docs/screenshots/hackglobal-reminder-preview.png). They use the local rules engine and an illustrative trial end date.
 
 ```mermaid
 flowchart LR
@@ -20,7 +22,7 @@ flowchart LR
     Evidence --> UI
     UI --> Approval[Operator approval]
     Approval --> Calendar[Google Calendar with stable event ID]
-    UI --> Guard[Deterministic action guard]
+    Developer[Developer application] --> Guard[Deterministic action guard]
 ```
 
 ## Run it
@@ -95,10 +97,10 @@ Run `.venv\Scripts\python.exe examples/guard_client.py` on Windows to see an ext
 
 ### Live page reviews
 
-Choose **Review a live page** on the home screen. Paste a public pricing, trial, checkout, or consent page, or upload a saved public copy. Say what you want to avoid and choose a workflow:
+Under **Compare the agents**, use **Test a live page** to paste a public pricing, trial, checkout, or consent page, or upload a saved public copy. Say what you want to avoid and choose a workflow:
 
-- **Review page** captures the source into a private review. Inspect the evidence, try captured choices, and preview a renewal reminder.
-- **Compare agents on this page** is under **More review options** and opens the existing side-by-side comparison.
+- **Try its choices myself** captures the source into a private review. Inspect the evidence, try captured choices, and preview a renewal reminder.
+- **Run both agents on this page** opens the side-by-side comparison.
 
 The bundled comparisons are also available below the consent lab.
 

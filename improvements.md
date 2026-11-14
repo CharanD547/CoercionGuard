@@ -1,5 +1,7 @@
 # CoercionGuard improvements
 
+This records the HackGlobal release, including the UI redesign. The original frontend has since been restored. The guard API, backend improvements, example client, and deployment documentation remain available. Use the [README](README.md) for the current walkthrough.
+
 CoercionGuard now opens with a live terms review. Paste a public pricing, trial, checkout, or consent URL and say what you want to avoid. The app captures the page, compares its terms and selected options against your goal, and can turn a cited renewal clause into a calendar reminder.
 
 ## Live review and evidence

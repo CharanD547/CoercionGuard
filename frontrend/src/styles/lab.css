@@ -229,10 +229,3 @@ footer{padding:18px clamp(16px,3vw,40px) 28px;font-size:13px;color:var(--ink-2);
   .opening-copy{top:50%;left:24px;width:48vw;transform:translateY(-50%)}
   .opening-copy h2{font-size:clamp(32px,6.2vw,60px)}
 }
-.product-nav{display:flex;flex:1;flex-wrap:wrap;gap:8px 18px}
-.product-nav a,.developer-panel a{color:var(--ink);text-underline-offset:4px}
-.head #cases{margin:0 0 18px}
-.developer-panel{padding:32px clamp(16px,3vw,40px);border-top:1px solid var(--rule)}
-.developer-panel p{max-width:62ch}
-.developer-panel>a{display:inline-block;margin-right:16px}
-.developer-panel pre{max-width:42rem;overflow:auto;padding:12px;background:var(--sheet);border:1px solid var(--rule)}

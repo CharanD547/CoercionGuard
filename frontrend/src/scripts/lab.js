@@ -15,53 +15,19 @@ const FIXTURES=[
    headline:'Order summary',policy:{maxCost:0,recurring:false,fields:[]},
    action:{label:'Open order summary',description:'Reads the order summary. Nothing is charged or shared.',cost:0,recurring:false,fields:[]}},
 ];
-const REVISIONS={
-  'free-trial':{button:'Try without auto-renewal',headline:'$0 due now',label:'Start trial without automatic renewal',
-    description:'This example proposal ends the trial without converting it to a paid plan.',cost:0,recurring:false,fields:[]},
-  'add-on':{button:'Try without the add-on',headline:'$40 total',label:'Proceed with a $40 total',
-    description:'This example proposal removes the $9 optional service.',cost:4000,recurring:false,fields:[]},
-  data:{button:'Try sharing email only',headline:'Email only',label:'Share your email address',
-    description:'This example proposal omits your location.',cost:0,recurring:false,fields:['Email']},
-};
-function activeFixture({caseIndex,revised}){
-  const fixture=FIXTURES[caseIndex];
-  const revision=REVISIONS[fixture.id];
-  if(!revised||!revision)return fixture;
-  const {button,headline,...action}=revision;
-  return {...fixture,headline,action};
-}
 const TERMS=[
   {key:'charge',name:'Immediate charge',tab:'Charge',tint:'#f3e08a'},
   {key:'renewal',name:'Recurring billing',tab:'Renewal',tint:'#f2b8c6'},
   {key:'data',name:'Personal data scope',tab:'Data',tint:'#b9d3ec'},
 ];
 const usd=c=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:c%100?2:0}).format(c/100);
-async function evaluate(policy,action){
-  const response=await fetch(API+'/api/v1/guard/check',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    signal:AbortSignal.timeout(8000),
-    body:JSON.stringify({
-      policy:{
-        currency:'USD',
-        max_immediate_charge_minor:policy.maxCost,
-        allowed_recurring_intervals:policy.recurring?['monthly']:[],
-        allowed_data_fields:policy.fields.map(field=>field.toLowerCase()),
-      },
-      proposal:{
-        currency:'USD',
-        immediate_charge_minor:action.cost,
-        recurring_interval:action.recurring?'monthly':'none',
-        data_fields:action.fields.map(field=>field.toLowerCase()),
-      },
-    }),
-  });
-  if(!response.ok)throw new Error('Guard check failed');
-  const {decision,checks}=await response.json();
-  return {
-    decision:{allow:'WITHIN POLICY',block:'BLOCKED',review_required:'REVIEW REQUIRED'}[decision],
-    checks:checks.map(check=>({...check,name:TERMS.find(t=>t.key===check.key).name,pass:check.status==='pass'})),
-  };
+function evaluate(policy,action){
+  const checks=[
+    {key:'charge',name:'Immediate charge',pass:action.cost<=policy.maxCost},
+    {key:'renewal',name:'Recurring billing',pass:!action.recurring||policy.recurring},
+    {key:'data',name:'Personal data scope',pass:action.fields.every(f=>policy.fields.includes(f))},
+  ];
+  return {decision:checks.every(c=>c.pass)?'WITHIN POLICY':'REVIEW REQUIRED',checks};
 }
 function termValues(fx){
   const {policy:p,action:a}=fx;
@@ -72,18 +38,16 @@ function termValues(fx){
   };
 }
 const firstFailing=r=>r?.checks.find(c=>!c.pass)?.key;
-const scopeLabel=check=>!check?'Not checked':check.pass?'Within scope':check.status==='unknown'?'Needs review':'Outside scope';
 const DEFAULT_TERM={'free-trial':'renewal','add-on':'charge',data:'data',control:'charge'};
 const TERM_PATTERN={charge:'drip_pricing',renewal:'subscription_trap',data:'forced_action'};
 let CATALOG=null;
-let checkVersion=0;
 const ruleFor=term=>{
   const meta=CATALOG?.[TERM_PATTERN[term]];
   return meta?` This is a ${meta.label.toLowerCase()} (${meta.india_ccpa}).`:'';
 };
 
 // ---------- One source of truth ----------
-const state={caseIndex:0,term:'renewal',result:null,revised:false};
+const state={caseIndex:0,term:'renewal',result:null};
 const listeners=new Set();
 function setState(patch){Object.assign(state,patch);render();listeners.forEach(f=>f(state))}
 
@@ -98,14 +62,10 @@ TERMS.forEach(t=>{
   b.append(el('span',{className:'chip'}),el('span',{className:'term-name',textContent:t.name}),pair,el('span',{className:'term-verdict'}));
   $('terms').append(el('li',{},[b]));
 });
-function selectCase(i){
-  checkVersion++;
-  $('check').disabled=false;
-  setState({caseIndex:i,term:DEFAULT_TERM[FIXTURES[i].id],result:null,revised:false});
-}
+function selectCase(i){setState({caseIndex:i,term:DEFAULT_TERM[FIXTURES[i].id],result:null})}
 
 function render(){
-  const fx=activeFixture(state),vals=termValues(fx),r=state.result;
+  const fx=FIXTURES[state.caseIndex],vals=termValues(fx),r=state.result;
   [...$('cases').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===state.caseIndex)));
   $('intent').textContent=fx.intent;
   $('cover').textContent=fx.headline;
@@ -117,19 +77,13 @@ function render(){
     b.querySelector('.asks').textContent=vals[k].requested;
     const v=b.querySelector('.term-verdict');
     v.dataset.state=check?(check.pass?'pass':'fail'):'pending';
-    v.textContent=scopeLabel(check);
+    v.textContent=check?(check.pass?'✓ Within scope':'✕ Outside scope'):'Not checked';
     b.setAttribute('aria-label',`${TERMS.find(t=>t.key===k).name}: you allowed ${vals[k].allowed}, proposal asks ${vals[k].requested}. ${v.textContent}`);
   }
   const verdict=$('verdict');
   verdict.dataset.state=r?(r.decision==='WITHIN POLICY'?'pass':'fail'):'pending';
-  verdict.textContent=r?({'WITHIN POLICY':'Within policy',BLOCKED:'Blocked','REVIEW REQUIRED':'Review required'})[r.decision]:
-    $('check').disabled?'Checking proposal…':'Not checked yet';
+  verdict.textContent=r?(r.decision==='WITHIN POLICY'?'Within policy':'Review required'):'Not checked yet';
   $('export').disabled=!r;
-  const revision=REVISIONS[fx.id];
-  const revise=$('revise');
-  revise.hidden=!revision||(!state.revised&&r?.decision!=='BLOCKED');
-  revise.disabled=$('check').disabled;
-  revise.textContent=state.revised?'Restore original proposal':revision?.button??'';
   const t=TERMS.find(t=>t.key===state.term),check=r?.checks.find(c=>c.key===state.term);
   const termState=check?(check.pass?'pass':'fail'):'pending';
   document.querySelector('.head').style.setProperty('--tint',t.tint);
@@ -139,7 +93,7 @@ function render(){
   $('allowed-value').textContent=vals[state.term].allowed;
   const termStatus=$('term-status');
   termStatus.dataset.state=termState;
-  termStatus.textContent=scopeLabel(check);
+  termStatus.textContent=check?(check.pass?'Within scope':'Outside scope'):'Not checked';
   $('inspector').style.setProperty('--tint',t.tint);
   $('ins-title').textContent=t.name;
   $('ins-allowed').textContent=vals[state.term].allowed;
@@ -150,12 +104,11 @@ function render(){
   $('led-asked').textContent=vals[state.term].requested;
   const it=$('ins-term');
   it.dataset.state=check?(check.pass?'pass':'fail'):'pending';
-  it.textContent=scopeLabel(check);
+  it.textContent=check?(check.pass?'Within scope':'Outside scope'):'Not checked';
   const failing=r?.checks.filter(c=>!c.pass).map(c=>c.name)??[];
   $('ins-note').textContent=!r?'Check the proposal to compare every term with your instruction.'
     :check.pass&&failing.length?`This term is fine. The proposal still needs review because of ${failing.join(' and ').toLowerCase()}.`
     :check.pass?'Every term matches your instruction.'
-    :check.status==='unknown'?'The guard could not verify this term. Review it before continuing.'
     :`This term goes beyond what you allowed, so the whole proposal needs review.${ruleFor(state.term)}`;
   $('exhibit').setAttribute('aria-label',`Carbon-copy form for ${fx.name}. ${t.name} copy pulled out: you allowed ${vals[state.term].allowed}, proposal asks ${vals[state.term].requested}.`);
   $('pf-top').textContent=fx.headline;
@@ -165,34 +118,14 @@ function render(){
   });
 }
 
-$('revise').onclick=()=>{
-  setState({revised:!state.revised,result:null});
-  $('check').focus();
-};
-$('check').onclick=async()=>{
-  const version=++checkVersion;
-  const fx=activeFixture(state);
-  $('check').disabled=true;
-  setState({result:null});
-  try{
-    const result=await evaluate(fx.policy,fx.action);
-    if(version===checkVersion)setState({result,term:firstFailing(result)??state.term});
-  }catch{
-    if(version===checkVersion)setState({result:{
-      decision:'REVIEW REQUIRED',
-      checks:TERMS.map(({key,name})=>({key,name,status:'unknown',code:'guard_unavailable',pass:false})),
-    }});
-  }finally{
-    if(version===checkVersion){
-      $('check').disabled=false;
-      $('revise').disabled=false;
-    }
-  }
+$('check').onclick=()=>{
+  const fx=FIXTURES[state.caseIndex],result=evaluate(fx.policy,fx.action);
+  setState({result,term:firstFailing(result)??state.term});
 };
 $('export').onclick=()=>{
-  const fx=activeFixture(state),r=state.result;if(!r)return;
+  const fx=FIXTURES[state.caseIndex],r=state.result;if(!r)return;
   const vals=termValues(fx);
-  const report={fixture:fx.name,intent:fx.intent,revised:state.revised,policy:fx.policy,action:fx.action,
+  const report={fixture:fx.name,intent:fx.intent,policy:fx.policy,action:fx.action,
     checks:r.checks.map(c=>({...c,authorized:vals[c.key].allowed,requested:vals[c.key].requested})),
     decision:r.decision,executed:false,exported_at:new Date().toISOString()};
   const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));
@@ -208,7 +141,7 @@ const sceneReady=(async()=>{
     const THREE=await import('three');
     await document.fonts.load('800 40px Archivo').catch(()=>{});
     await document.fonts.load('700 40px "Courier Prime"').catch(()=>{});
-    scene=createScene(THREE,$('exhibit'),{$,el,TERMS,termValues,FIXTURES,activeFixture,setState});
+    scene=createScene(THREE,$('exhibit'),{$,el,TERMS,termValues,FIXTURES,setState});
     scene.setInstant(motion.matches);
     scene.show(state,{snap:true});
     listeners.add(s=>scene.show(s,{snap:motion.matches}));
@@ -253,14 +186,7 @@ function completeHandoff(){
   exhibit.removeAttribute('style');
   setOpening(false);
   scene?.resize();
-  if(opener)opener.focus({preventScroll:true});
-  else if(location.hash==='#lab'){
-    $('lab').scrollIntoView();
-    $('check').focus({preventScroll:true});
-  }else if(!location.hash.startsWith('#review=')){
-    $('page-review').scrollIntoView();
-    $('pr-url').focus({preventScroll:true});
-  }
+  (opener??$('check')).focus({preventScroll:true});
   opener=null;
 }
 function enterLab(immediate=false){
@@ -273,6 +199,7 @@ function enterLab(immediate=false){
   landing=true;
   const start=exhibit.getBoundingClientRect();
   setOpening(false);
+  (opener??$('check')).focus({preventScroll:true});
   const end=$('stage-slot').getBoundingClientRect();
   Object.assign(exhibit.style,{position:'fixed',inset:'auto',top:start.top+'px',left:start.left+'px',width:start.width+'px',height:start.height+'px',zIndex:30});
   exhibit.getBoundingClientRect();
@@ -304,12 +231,11 @@ motion.addEventListener('change',()=>{
     if(opening){beats?.finish(true);beats=null;scene?.show(state,{snap:true})}
   }else if(opening)reveal();
 });
-setOpening(true);
+let seen=false;
+try{seen=sessionStorage.getItem('cg-opening')==='seen';sessionStorage.setItem('cg-opening','seen')}catch{}
+setOpening(!seen&&!location.hash);
 $('replay').hidden=false;
-reveal();
-addEventListener('pageshow',event=>{
-  if(event.persisted&&!opening&&!landing)$('replay').click();
-});
+if(opening)reveal();
 sceneReady.then(ok=>{if(ok&&opening&&!landing)reveal()});
 
 // ---------- Live proof: the backend's headless agent battle ----------

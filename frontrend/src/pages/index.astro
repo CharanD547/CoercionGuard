@@ -1,7 +1,6 @@
 ---
 import Lab from "../components/Lab.astro";
 import SandboxComparison from "../components/SandboxComparison.astro";
-import PageReview from "../components/PageReview.astro";
 import "../styles/lab.css";
 ---
 <!doctype html>
@@ -24,34 +23,13 @@ import "../styles/lab.css";
 
 <header class="bar lab-ui">
   <a class="wordmark" href="./">CoercionGuard</a>
-  <nav class="product-nav" aria-label="Main navigation">
-    <a href="#page-review">Live review</a>
-    <a href="#lab">Consent lab</a>
-    <a href="#developers">For developers</a>
-  </nav>
+  <nav id="cases" aria-label="Cases"></nav>
   <button class="ghost" id="replay" hidden>Replay intro</button>
 </header>
 
-<PageReview />
 <Lab />
 <SandboxComparison />
-<section class="lab-ui developer-panel" id="developers" aria-labelledby="developers-title">
-  <h2 id="developers-title">Guard an agent action</h2>
-  <p>Send the user’s authorized limits and the proposed action before your tool runs. The API returns an allow, block, or review decision with reasons.</p>
-  <a href="/docs#/Action%20guard">API reference</a>
-  <a href="#lab">Try block → revise → allow</a>
-  <details>
-    <summary>Example API request</summary>
-    <pre tabindex="0"><code>POST /api/v1/guard/check
-Content-Type: application/json
-
-{JSON.stringify({
-  policy: {currency:"USD",max_immediate_charge_minor:4000,allowed_recurring_intervals:[],allowed_data_fields:[]},
-  proposal: {currency:"USD",immediate_charge_minor:4900,recurring_interval:"none",data_fields:[]},
-}, null, 2)}</code></pre>
-  </details>
-</section>
-<footer class="lab-ui">CoercionGuard</footer>
+<footer class="lab-ui">Synthetic cases, evaluated in your browser. Checking a proposal never runs the action.</footer>
 
 <script>import "../scripts/lab.js";</script>
 </body>
