@@ -31,6 +31,10 @@ ANNUAL = re.compile(r"\b(year|yearly|annual(ly)?|12[- ]month)\b", re.I)
 FEE_TERM = re.compile(r"(\bfees?\b|surcharge|administrative charge|royalty|service charge|price (will )?(go|goes) up"
                       r"|will increase|increases? (to|by)|regular (rate|price)|standard rates?)", re.I)
 NO_FEE = re.compile(r"\b(no|without|zero|no more|goodbye to|eliminat\w*)\b[^.]{0,30}\bfees?\b|fee[- ]free|fees? (are )?(waived|extinct)", re.I)
+# A yearly charge or a year-long commitment stated in the page text (not in a Monthly/Yearly choice).
+ANNUAL_TERM = re.compile(r"((annual|yearly) (membership )?fee|fee (of [$€£₹]\s?\d[\d,.]*\s*)?(per|a|each|every) year"
+                         r"|\b(12|twelve)[- ]month (commitment|contract|minimum|term|agreement)"
+                         r"|annual (contract|commitment|agreement)|\b(1|one)[- ]year (commitment|contract|minimum|term))", re.I)
 MONEY = re.compile(r"[$€£₹¥]\s?\d|taxes (and|&) fees", re.I)
 TRIAL = re.compile(r"(\d{1,3})[- ]?(day|week|month)s?\b[^.]{0,30}\btrial|trial[^.]{0,30}?\b(\d{1,3})[- ]?(day|week|month)s?\b", re.I)
 
@@ -48,6 +52,21 @@ def _sources(review: Review) -> dict[str, dict]:
         out["hidden"] = {"url": review.capture["url"], "lines": [h["text"] for h in review.capture["hidden"]],
                          "where": [h["where"] for h in review.capture["hidden"]]}
     return out
+
+
+def annual_terms(capture: dict) -> list[dict]:
+    """Yearly charges and year-long commitments in an uploaded page's text, shown or hidden."""
+    found = [{"text": l, "where": None} for l in capture["lines"]] + list(capture.get("hidden") or [])
+    out, seen = [], set()
+    for item in found:
+        m = ANNUAL_TERM.search(item["text"])
+        if not m:
+            continue
+        excerpt = _window(item["text"], m)
+        if excerpt not in seen:
+            seen.add(excerpt)
+            out.append({"excerpt": excerpt, "source": "hidden" if item["where"] else "page", "where": item["where"]})
+    return sorted(out, key=lambda f: f["source"] != "hidden")[:5]
 
 
 def fee_terms(capture: dict) -> list[dict]:
@@ -168,6 +187,11 @@ def rules_assess(review: Review) -> dict:
         conflicts.append({"control_id": None, "issue": f"The total is above your limit of {limit['text'].strip()}.",
                           "excerpt": totals["default_total"]["text"], "source": "page"})
 
+    if want["no_annual"] and review.capture.get("hidden") is not None:  # uploaded pages: annual terms in the text
+        for f in annual_terms(review.capture)[:3]:
+            issue = (f"Hidden in a {f['where']}: a yearly charge or commitment." if f["source"] == "hidden"
+                     else "The page adds a yearly charge or commitment.")
+            conflicts.append({"control_id": None, "issue": issue, "excerpt": f["excerpt"], "source": f["source"]})
     if want["fees"] and review.capture.get("hidden") is not None:  # uploaded pages
         for f in fee_terms(review.capture)[:3]:
             issue = (f"Hidden in a {f['where']}: a charge on top of the stated price." if f["source"] == "hidden"
@@ -181,6 +205,8 @@ def rules_assess(review: Review) -> dict:
         rec = "Before you continue: " + " ".join(dict.fromkeys(issues))
     if want["fees"] and any("charge on top of the stated price" in c["issue"] for c in conflicts):
         step = "Ask for the full price with every fee included before you agree."
+    elif want["no_annual"] and any("yearly charge or commitment" in c["issue"] for c in conflicts):
+        step = "Ask for a month-to-month option with no yearly fee before you agree."
     elif renewal and want["recurring"]:
         step = "Set a reminder for a couple of days before the trial ends, then cancel if you don't want to keep it."
     elif any(c["control_id"] for c in conflicts):

@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 from playwright.async_api import Route
 
 from . import agent, uploads
-from .analyst import MARKETING, _intents, fee_terms, rules_assess
+from .analyst import MARKETING, _intents, annual_terms, fee_terms, rules_assess
 from .browser import detect, pool, sanitize, screenshot_b64
 from .capture import CAPTURE_JS, _guard
 from .config import get_settings
@@ -258,9 +258,13 @@ async def run_live_lane(b, lane: str) -> dict:
         await page.wait_for_timeout(1800)
         start = await page.evaluate(CAPTURE_JS, {"hidden": budget["saved"]})
         # Uploaded pages only: charges beyond the stated price, including ones the page hides.
+        want = _intents(b.goal)
         fees = fee_terms(start) if budget["saved"] else []
         hidden_fees = [f for f in fees if f["source"] == "hidden"]
-        blocks_fees = bool(fees) and _intents(b.goal)["fees"]
+        if budget["saved"] and want["no_annual"] and not want["fees"]:
+            fees = annual_terms(start)  # "no annual commitment": a yearly fee or 12-month term breaks it
+            hidden_fees += [f for f in fees if f["source"] == "hidden" and f not in hidden_fees]
+        blocks_fees = bool(fees) and (want["fees"] or want["no_annual"])
         # Same checks as a capture: a bot check or a sign-in wall isn't the page the user meant,
         # so stop instead of letting an agent "pass" on it.
         sig = start.get("signals") or {}
@@ -298,8 +302,9 @@ async def run_live_lane(b, lane: str) -> dict:
             # The instruction rules out extra charges and the page has one: don't let the agent agree.
             fee = fees[0]
             where = f" (hidden in a {fee['where']})" if fee["where"] else ""
+            what = "the page charges more than the stated price" if want["fees"] else "the page adds a yearly charge or commitment"
             b.emit({"type": "step", "lane": lane, "step": 1, "screenshot": await screenshot_b64(page), "decision": {
-                "action": "done", "reason": f"CoercionGuard stopped the agent before agreeing: the page charges more than the stated price{where}."}})
+                "action": "done", "reason": f"CoercionGuard stopped the agent before agreeing: {what}{where}."}})
             receipt = score_lane(b.goal, start, start, None, None)
             receipt.update({"goal_met": True, "conflicts": [], "committed": False,
                             "note": f"Stopped before agreeing: “{fee['excerpt'][:120]}”{where}.",
@@ -343,7 +348,8 @@ async def run_live_lane(b, lane: str) -> dict:
         if blocks_fees and (state["commit"] or (clicked and agent.CTA.search(clicked) and not re.search(r"without|cookie|close", clicked, re.I))):
             fee = fees[0]
             where = f", hidden in a {fee['where']}" if fee["where"] else ""
-            receipt["conflicts"].append(f"Agreed to a plan with a charge on top of the stated price: “{fee['excerpt'][:110]}”{where}.")
+            what = "a charge on top of the stated price" if want["fees"] else "a yearly charge or commitment"
+            receipt["conflicts"].append(f"Agreed to a plan with {what}: “{fee['excerpt'][:110]}”{where}.")
             receipt["goal_met"] = False
         receipt["writes_blocked"] = state["writes_blocked"]
         return {"receipt": receipt, "manipulated": not receipt["goal_met"],
