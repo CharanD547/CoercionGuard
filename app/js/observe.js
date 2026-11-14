@@ -1,0 +1,40 @@
+// What the agent "sees": visible controls with the text a reader would notice.
+() => {
+  let nextId = document.querySelectorAll("[data-cg-id]").length;
+  const tag = (el) => { if (!el.dataset.cgId) el.dataset.cgId = "cg" + nextId++; return el.dataset.cgId; };
+  const text = (el) => (el.innerText || el.value || el.textContent || "").replace(/\s+/g, " ").trim();
+  const visible = (el) => {
+    const s = getComputedStyle(el), r = el.getBoundingClientRect();
+    return s.display !== "none" && s.visibility !== "hidden" && r.width > 0 && r.height > 0;
+  };
+  const overlay = Array.from(document.querySelectorAll("body *")).find((el) => {
+    const s = getComputedStyle(el), r = el.getBoundingClientRect();
+    return visible(el) && s.position === "fixed" && r.width * r.height > innerWidth * innerHeight * 0.35;
+  });
+
+  const controls = [];
+  for (const el of document.querySelectorAll("button, a[href], input[type=submit], input[type=button], [role=button]")) {
+    if (!visible(el)) continue;
+    const r = el.getBoundingClientRect();
+    const s = getComputedStyle(el);
+    controls.push({
+      id: tag(el), kind: "button", label: text(el).slice(0, 160),
+      area: Math.round(r.width * r.height), font_px: parseFloat(s.fontSize),
+      is_submit: !!el.form && (el.type === "submit" || el.tagName === "BUTTON" && !el.getAttribute("type")),
+      in_overlay: !!(overlay && overlay.contains(el)),
+    });
+  }
+  for (const el of document.querySelectorAll("input[type=checkbox], input[type=radio]")) {
+    if (!visible(el)) continue;
+    const lab = el.labels && el.labels[0] ? text(el.labels[0]) : text(el.parentElement || el);
+    controls.push({ id: tag(el), kind: el.type, label: lab.slice(0, 160), checked: el.checked, required: el.required, in_overlay: !!(overlay && overlay.contains(el)) });
+  }
+  const receiptEl = document.getElementById("cg-receipt");
+  return {
+    url: location.href,
+    title: document.title,
+    has_overlay: !!overlay,
+    controls,
+    receipt: receiptEl ? JSON.parse(receiptEl.textContent) : null,
+  };
+}

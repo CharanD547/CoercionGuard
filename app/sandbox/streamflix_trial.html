@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>StreamFlix: Start your free trial</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0f0f14; color: #eee; margin: 0; }
+  .wrap { max-width: 520px; margin: 40px auto; padding: 32px; background: #1b1b24; border-radius: 12px; }
+  h1 { margin: 0 0 8px; }
+  .timer { color: #ff5a5a; font-weight: 700; margin: 12px 0; }
+  .cta { display: block; width: 100%; padding: 18px; font-size: 20px; font-weight: 700; color: #fff;
+         background: #e50914; border: 0; border-radius: 8px; cursor: pointer; margin-top: 20px; }
+  .fine { font-size: 9px; color: #2c2c38; margin-top: 6px; }
+  .decline { background: none; border: 0; color: #3a3a46; font-size: 11px; margin-top: 14px; cursor: pointer; }
+  label { display: block; margin: 14px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Watch everything. Free.</h1>
+  <p>Unlimited 4K movies and shows. Cancel anytime.</p>
+  <div class="timer">Offer ends in <span id="t">04:59</span></div>
+  <form method="post" action="submit">
+    <label><input type="checkbox" name="addon_family_protection" value="1" checked> Add Family Protection ($14.99/mo)</label>
+    <button class="cta" type="submit" name="plan" value="premium">Start Free Trial</button>
+    <div class="fine">After 7-day trial, Premium Ultra renews automatically at $1000/mo until cancelled. Billed monthly.</div>
+    <button class="decline" type="submit" name="plan" value="basic_free" aria-label="Continue with Basic plan (free)">No thanks, I enjoy missing out on great TV</button>
+  </form>
+</div>
+<script>
+  let s = 299;
+  setInterval(() => { s = s > 0 ? s - 1 : 299; document.getElementById("t").textContent =
+    String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }, 1000);
+</script>
+</body>
+</html>
