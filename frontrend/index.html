@@ -1,234 +1,711 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ece9df"><title>CoercionGuard — Consent Lab</title><style>:root{--paper:#ece9df;--ink:#252823;--muted:#565c52;--line:#bbbcb0;--green:#263e35;--red:#923d2d;background:var(--paper);color:var(--ink);font:16px/1.5 Arial,sans-serif}*{box-sizing:border-box}body{margin:0}a{color:inherit}button,a{outline-offset:4px}button:focus-visible,a:focus-visible{outline:2px solid var(--red)}button{font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:4px;min-height:44px;padding:8px 14px;cursor:pointer}button:disabled{opacity:.48;cursor:default}[hidden]{display:none!important}.shell{width:min(1240px,calc(100% - 72px));margin:auto}.skip{position:absolute;left:18px;top:-100px;background:white;padding:8px;z-index:5}.skip:focus{top:10px}header,footer{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:20px 0;border-bottom:1px solid var(--line)}.brand{font-size:24px;font-weight:800;letter-spacing:-.07em;text-decoration:none}.brand span{color:var(--red)}.hero{display:grid;grid-template-columns:.8fr 1.2fr;align-items:center;min-height:490px;gap:30px;padding:24px 0}.eyebrow{font:700 11px/1.4 monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}.copy h1,.opening-copy h2{font:400 clamp(65px,8vw,116px)/.86 Georgia,serif;letter-spacing:-.08em;margin:15px 0 21px}.copy em{color:var(--red)}.copy>p:not(.eyebrow){max-width:36ch;color:var(--muted)}.primary{background:var(--green);color:#fffdf3;border:1px solid var(--green);display:inline-flex;align-items:center;gap:15px;min-height:44px;padding:9px 14px;border-radius:4px;text-decoration:none;font-weight:700}.primary:hover{background:#304e42}.exhibit,.opening-art{display:grid;place-items:center;min-height:390px;perspective:1100px;background:radial-gradient(ellipse,#dddbcb 8%,transparent 70%);overflow:hidden}.object{width:min(57%,310px);aspect-ratio:1.12;position:relative;transform-style:preserve-3d;transform:rotateX(18deg) rotateY(-20deg) rotateZ(-8deg);transition:transform .65s}.plate{position:absolute;inset:0;padding:9% 8%;border:1px solid #b8b5a3;border-radius:5px;transform-style:preserve-3d;box-shadow:0 6px 0 #bcb6a0,0 22px 40px #1b241e30;background:#faf4e3;transition:transform .72s cubic-bezier(.2,.75,.25,1),opacity .45s;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:9px}.plate span{font:700 clamp(8px,1.15vw,11px)/1.3 monospace;letter-spacing:.1em}.plate strong{font:400 clamp(22px,3.5vw,49px)/.96 Georgia;letter-spacing:-.055em}.plate small{font:500 clamp(9px,1.1vw,13px)/1.3 Arial}.plate-back{background:#30463b;color:#f4efda;box-shadow:0 6px 0 #23372d,0 18px 30px #1c241d30;transform:translate3d(-24%,-22%,-64px)}.plate-front{transform:translateZ(16px);background:repeating-linear-gradient(95deg,#f9f3e3,#f9f3e3 4px,#f8f1df 5px)}.plate-front strong{font-size:clamp(43px,6vw,86px)}.plate-renewal{inset:44% -16% -11% 16%;background:#984636;color:#fff3df;box-shadow:0 6px 0 #713529,0 20px 30px #37251a38;transform:translate3d(20%,23%,60px) rotateZ(9deg)}.plate-renewal strong{font-size:clamp(18px,2.4vw,34px)}.rule,.lines{height:1px;width:100%;background:#c9beaa}.lines{height:11px;width:67%;background:repeating-linear-gradient(to bottom,#d3c7b1 0 1px,transparent 1px 5px)}.exhibit[data-state=pass] .plate-renewal{opacity:0;transform:translate3d(0,0,-50px)}.exhibit[data-state=pause] .plate-renewal{transform:translate3d(30%,35%,85px) rotateZ(11deg)}
-#lab{border-top:1px solid var(--line);padding:28px 0 20px}.lab-heading,.audit{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.lab-heading{margin-bottom:18px}.lab-heading h2{font:400 clamp(32px,4vw,51px)/1 Georgia;letter-spacing:-.055em;margin:0}#cases{display:flex;gap:6px;flex-wrap:wrap}#cases [aria-pressed=true]{background:var(--ink);color:#fffdf4;border-color:var(--ink)}.trace{display:grid;grid-template-columns:.7fr 1fr 1fr;border:1px solid var(--line);background:#e4e2d8}.trace>div,.trace>article{padding:21px;min-width:0}.trace>article{border-left:1px solid var(--line)}.intent>p:last-child{font:400 24px/1.23 Georgia;margin:0}.receipt{background:#fbf7eb}.result{background:#e4e9df}.result-top{display:flex;justify-content:space-between;align-items:start;gap:8px}.result-top span{font:700 11px/1.4 monospace;border:1px solid currentColor;padding:2px 4px;white-space:nowrap}.result-top .pause{color:var(--red)}.result-top .pass{color:var(--green)}.trace h3{font:400 27px/1.07 Georgia;letter-spacing:-.04em;margin:0}.trace article>p:not(.eyebrow){font-size:14px;color:var(--muted)}dl{display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:13px}dt{color:var(--muted)}dd{margin:0;text-align:right;font-weight:700}#checks{list-style:none;padding:0;margin:0;font-size:13px}#checks li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid #b8c0b6}#checks [data-pass=false]{color:var(--red);font-weight:700}#run{margin-top:6px}.audit,footer{font-size:13px;color:var(--muted)}.audit{padding:12px 0}footer{border-bottom:0;border-top:1px solid var(--line)}
-#opening{position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;border:0;padding:0;color:#f2ebd9;background:#202d25;overflow:hidden}#opening::backdrop{background:#202d25}body:has(#opening[open]){overflow:hidden}.opening-top,.opening-foot{position:absolute;z-index:2;left:5%;right:5%;display:flex;justify-content:space-between;align-items:center;gap:15px}.opening-top{top:4%}.opening-top strong{font-size:23px;letter-spacing:-.06em}.opening-top button{border-color:#879185}.opening-copy{position:absolute;z-index:1;top:26%;left:6%;pointer-events:none}.opening-copy h2{font-size:clamp(42px,6.7vw,104px)}.opening-copy em{color:#e6bc9d}.opening-copy .eyebrow{color:#d3ceba}.opening-art{position:absolute;inset:10% 0 9% 40%;background:radial-gradient(ellipse,#5c6650,transparent 72%)}.opening-art .object{width:min(60%,380px)}.opening-art .object.performing{animation:camera 4.3s both}.opening-art .performing .plate-back{animation:authority 4.3s both}.opening-art .performing .plate-renewal{animation:renewal 4.3s both}.opening-foot{bottom:5%;color:#d4d7c6;font:12px monospace}.timeline{width:23%;height:2px;background:#838e7c}.timeline::before{content:"";display:block;width:100%;height:100%;background:#eddcc1;transform-origin:left}#opening[open] .timeline::before{animation:progress 4.3s linear both}@keyframes progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}@keyframes camera{0%{transform:rotateX(25deg) rotateY(-43deg) rotateZ(-11deg) scale(1.15)}55%,100%{transform:rotateX(12deg) rotateY(-15deg) rotateZ(-7deg) scale(.98)}}@keyframes authority{0%,24%{transform:translate3d(-2%,0,-40px)}64%,100%{transform:translate3d(-25%,-27%,-55px)}}@keyframes renewal{0%,26%{opacity:0;transform:translate3d(0,0,-24px)}38%{opacity:1;transform:translate3d(5%,8%,34px)}73%,100%{transform:translate3d(26%,30%,76px) rotateZ(10deg)}}
-@media(max-width:830px){.shell{width:calc(100% - 38px)}.trace{grid-template-columns:1fr 1fr}.trace .intent{grid-column:1/-1;border-bottom:1px solid var(--line)}.trace .receipt{border-left:0}.hero{min-height:390px}.exhibit{min-height:320px}.copy h1{font-size:clamp(54px,9vw,81px)}}@media(max-width:560px){.shell{width:calc(100% - 28px)}.hero,.trace{grid-template-columns:1fr;gap:0}.hero{padding:23px 0 0}.copy h1{font-size:clamp(54px,12vw,72px)}.exhibit{min-height:265px}.trace .intent{grid-column:auto}.trace>article{border-left:0;border-bottom:1px solid var(--line)}.opening-copy{top:14%;left:5%}.opening-art{inset:34% 0 10%;min-height:0}.opening-art .object{width:52%}.opening-foot{font-size:10px}footer{align-items:flex-start;flex-direction:column}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2f3a38">
+<title>CoercionGuard consent lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --desk:#dde2df;--rule:#c3cbc7;--ink:#18211e;--ink-2:#46534e;
+  --blotter:#2f3a38;--blotter-2:#3b4845;
+  --sheet:#fbfbf8;--canary:#f3e08a;--pink:#f2b8c6;--copy-blue:#b9d3ec;
+  --stamp:#b3243f;--notary:#1f4ea8;
+  --sans:"Archivo",system-ui,sans-serif;--typed:"Courier Prime","Courier New",monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{background:var(--desk);color:var(--ink);font:400 16px/1.5 var(--sans)}
+body{margin:0;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--notary);outline-offset:3px}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+[hidden]{display:none!important}
 
-.plate{--depth:8px;--edge:#b9ad90;--reverse:#e3dac2}.plate-back{--edge:#25392f;--reverse:#30463b}.plate-renewal{--edge:#713529;--reverse:#923d2d}
-.edge-face{position:absolute;pointer-events:none;background:var(--edge);display:block}.edge-left,.edge-right{width:var(--depth);height:100%;top:0}.edge-left{left:0;transform-origin:left;transform:rotateY(90deg)}.edge-right{right:0;transform-origin:right;transform:rotateY(-90deg)}.edge-top,.edge-bottom{width:100%;height:var(--depth);left:0}.edge-top{top:0;transform-origin:top;transform:rotateX(-90deg)}.edge-bottom{bottom:0;transform-origin:bottom;transform:rotateX(90deg)}.edge-reverse{inset:0;transform:translateZ(-8px);background:var(--reverse)}
-.intent{padding:15px 19px;background:#dedfd3;border:1px solid var(--line);border-bottom:0}.intent>p:last-child{font-size:21px}.workbench{display:grid;grid-template-columns:1.03fr 1fr;border:1px solid var(--line)}.workbench article{min-width:0;padding:24px}.workbench h3{font:400 clamp(25px,3vw,38px)/1.06 Georgia,serif;letter-spacing:-.05em;margin:4px 0 12px}.workbench article>p:not(.eyebrow){color:var(--muted)}.workbench .result{border-left:1px solid var(--line)}.evidence-label{margin-top:27px}#facts{display:block;margin:0}#facts>div{display:grid;grid-template-columns:1fr minmax(100px,.92fr);align-items:center;gap:8px;border-top:1px solid #d3cbbb;padding:5px 0}#facts button{width:100%;font-weight:700;text-align:left;background:#f2ebdb;overflow-wrap:anywhere}#facts button[aria-pressed=true]{outline:2px solid #756d57;outline-offset:-2px}#facts button[data-state=pause]{background:#f3dacf;color:#722c20;border-color:#be8173}#facts button[data-state=pass]{color:#285344}.inspector{border:1px solid #b9c4b5;background:#f1f2e9;padding:15px;margin:19px 0 10px}.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}.compare div{min-width:0}.compare span,.compare strong{display:block;overflow-wrap:anywhere}.compare span{font-size:12px;color:var(--muted)}.compare strong{margin-top:4px}.compare div+div{border-left:1px solid #bbc7b9;padding-left:12px}#rule-status{margin:12px 0 0;font-size:13px;color:#47574b}#rule-status[data-state=pause]{color:#822d21;font-weight:700}@media(max-width:650px){.workbench{grid-template-columns:1fr}.workbench article{padding:16px}.workbench .result{border-left:0;border-top:1px solid var(--line)}}
-/* The review desk is the first view after the opening. */
-body{background:#e9e6da}header.shell{height:65px;border-color:#b2b3a5}#lab{padding:23px 0 18px;border:0;outline:none}.lab-heading{align-items:end;margin-bottom:17px}.lab-heading h1{font:400 clamp(36px,6vw,75px)/.96 Georgia,serif;letter-spacing:-.074em;margin:0}.lab-heading .eyebrow{color:#54644f}.desk{display:grid;grid-template-columns:168px minmax(0,1fr);border:1px solid #9fa99a;border-radius:12px;overflow:hidden;background:#263a31}.case-rail{padding:20px 11px;background:#263a31;color:#f6eed9}.case-rail .eyebrow{color:#c9d1bd;margin:0 8px 12px}#cases{display:grid;gap:7px}#cases button{text-align:left;border-color:#829083;color:#f4f0df;padding:9px 10px;font-size:13px}#cases [aria-pressed=true]{background:#f0e7d1;color:#29372d;border-color:#f0e7d1}.workspace{min-width:0;background:#f6f0df}.overview{display:grid;grid-template-columns:1fr 1fr;min-height:230px;background:#303e34;color:#f5ecd7;border-bottom:1px solid #768575}.overview .intent{align-self:center;background:none;border:0;padding:24px}.overview .intent .eyebrow{color:#c1ceb4}.overview .intent>p:last-child{font-size:clamp(20px,2.8vw,36px);letter-spacing:-.045em}.overview .exhibit{min-height:230px;background:radial-gradient(ellipse at center,#65715c 0%,transparent 70%)}.overview .object{width:min(58%,205px)}.overview .plate-front strong{font-size:clamp(28px,4vw,53px)}.overview .plate-back strong{font-size:clamp(17px,2.2vw,26px)}.overview .plate-renewal strong{font-size:clamp(15px,2vw,25px)}.overview .plate span{font-size:9px}.overview .plate small{font-size:10px}.workbench{border:0;border-bottom:1px solid #b3bdad}.workbench .receipt{background:#faf4e5}.workbench .result{background:#e2e8da}.workbench article{padding:19px}.workbench h3{font-size:clamp(22px,2.6vw,34px)}.workbench .inspector{margin-bottom:0}.workbench .evidence-label{margin-top:16px}.audit{padding:9px 17px}.audit p{margin:0}#run{margin:0}.workbench .result:has(.pause){box-shadow:inset 0 4px #a34d3d}
-@media(max-width:760px){.desk{grid-template-columns:1fr}.case-rail{padding:10px}.case-rail .eyebrow{display:none}#cases{display:flex}.overview{min-height:170px}.overview .exhibit{min-height:170px}.overview .intent{padding:14px}.overview .object{width:63%}.overview .plate{gap:4px}.overview .plate small{font-size:8px}.overview .plate span{font-size:7px}}
-@media(max-width:400px){.overview .plate-renewal strong{font-size:13px}.overview .plate-front strong{font-size:25px}.overview .plate-back strong{font-size:14px}}
-.overview .plate-front{color:var(--ink)}.overview .plate-renewal{inset:41% -10% -2% 15%}.overview .object{margin-top:-17px}
-.stage-wrap{min-width:0;position:relative;background:#202d26;border-left:1px solid #677464}.stage-wrap .exhibit{height:100%;min-height:250px}.stage-wrap .object{width:min(48%,180px);margin-top:-21px;transform:rotateX(12deg) rotateY(-17deg) rotateZ(-5deg)}.stage-wrap .plate-back{transform:translate3d(-39%,-12%,-32px) rotateZ(-9deg)}.stage-wrap .plate-front{transform:translate3d(22%,4%,31px) rotateZ(5deg)}.stage-wrap .plate-front strong{font-size:clamp(18px,2.4vw,31px);overflow-wrap:anywhere}.stage-wrap .plate-renewal{inset:58% -20% -14% 27%;transform:translate3d(23%,18%,62px) rotateZ(7deg)}.stage-wrap .plate-renewal strong{font-size:clamp(15px,2vw,24px)}.stage-wrap .exhibit[data-term-state=pause] .plate-front{transform:translate3d(17%,-14%,32px) rotateZ(3deg)}.stage-wrap .exhibit[data-term-state=pass] .plate-front{transform:translate3d(27%,2%,31px) rotateZ(4deg)}#stage-caption{position:absolute;inset:auto 0 0;margin:0;padding:8px 10px;background:#202d26;color:#e8ead6;font:11px/1.35 monospace;text-align:center}
-@media(max-width:650px){.overview{grid-template-columns:1fr}.stage-wrap{border-left:0;border-top:1px solid #677464}.stage-wrap .exhibit{min-height:205px}.stage-wrap .object{width:min(41%,153px)}}
-#facts button{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 10px}.term-outcome{font:700 10px/1.3 monospace;letter-spacing:.025em}.term-outcome[hidden]{display:none}
-</style></head>
-<body><a class="skip" href="#lab">Skip to lab</a>
-<header class="shell"><a class="brand" href="./">CoercionGuard<span>.</span></a><button id="play-opening" hidden>Replay opening <span aria-hidden="true">↺</span></button></header>
-<main class="shell">
-<section id="lab" tabindex="-1" aria-labelledby="lab-title">
-<div class="lab-heading"><div><p class="eyebrow">Browser consent lab · Illustrative cases</p><h1 id="lab-title">Inspect the consent gap.</h1></div><button class="primary" id="run">Check against policy</button></div>
-<div class="desk"><nav class="case-rail" aria-label="Cases"><p class="eyebrow">Cases</p><div id="cases" role="group" aria-label="Choose a case"></div></nav>
-<div class="workspace"><div class="overview"><div class="intent"><p class="eyebrow">User instruction</p><p id="intent"></p></div><div class="stage-wrap"><div class="exhibit" id="stage" aria-hidden="true"></div><p id="stage-caption"></p></div></div>
-<div class="workbench">
-<article class="receipt"><p class="eyebrow">Action proposal</p><h3 id="action"></h3><p id="detail"></p><p class="eyebrow evidence-label">Select a term to inspect its rule</p><dl id="facts"></dl></article>
-<article class="result"><div class="result-top"><p class="eyebrow">Policy review</p><span id="badge">READY</span></div><h3 id="verdict">Awaiting evaluation</h3><p id="explanation"></p><div class="inspector"><p class="eyebrow" id="rule-name"></p><div class="compare"><div><span>User authorized</span><strong id="allowed"></strong></div><div><span>Proposal requests</span><strong id="requested"></strong></div></div><p id="rule-status" role="status"></p></div></article>
-</div><div class="audit"><p id="status" role="status">Local evaluation. No browser action is executed.</p><button id="export" disabled>Export decision JSON</button></div></div></div></section>
-</main><footer class="shell">CoercionGuard <span>Illustrative inputs · Local policy evaluation</span></footer>
-<dialog id="opening" aria-labelledby="opening-title"><div class="opening-top"><strong>CoercionGuard.</strong><button id="skip-opening">Skip to lab</button></div><div class="opening-copy"><p class="eyebrow">Consent review</p><h2 id="opening-title">The trial is free.<br><em>The renewal isn’t.</em></h2></div><div class="opening-art" id="intro-scene" aria-hidden="true"></div><div class="opening-foot"><p id="chapter">Read the proposed action</p><div class="timeline" aria-hidden="true"></div></div></dialog>
-<template id="sculpture"><div class="object">
-<div class="plate plate-back"><span>USER PERMISSION</span><strong>Trial only</strong><small>Recurring billing excluded</small></div>
-<div class="plate plate-front"><span>TRIAL PROPOSAL</span><strong>\$0<small> due now</small></strong><div class="rule"></div><div class="lines"></div></div>
-<div class="plate plate-renewal"><span>RECURRING BILLING</span><strong>Auto-renewal</strong><small>Outside user authority</small></div>
-</div></template>
+/* Header: wordmark, case tabs, replay */
+.bar{display:flex;align-items:center;gap:28px;padding:14px clamp(16px,3vw,40px);border-bottom:1px solid var(--rule)}
+.wordmark{font:800 21px/1 var(--sans);font-stretch:125%;letter-spacing:-.02em;text-decoration:none;color:var(--ink);white-space:nowrap}
+#cases{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+#cases button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px 9px;font-weight:550;color:var(--ink-2);white-space:nowrap}
+#cases button:hover{color:var(--ink)}
+#cases button[aria-pressed=true]{color:var(--ink);border-bottom-color:var(--ink)}
+#cases button:disabled{opacity:.5;cursor:default}
+.ghost{background:none;border:1px solid var(--rule);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:550;white-space:nowrap}
+.ghost:hover{border-color:var(--ink-2)}
+
+/* Lab grid */
+#lab{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"head stage" "evidence stage" "evidence inspect";
+  gap:0 clamp(20px,3vw,44px);padding:clamp(18px,2.4vw,32px) clamp(16px,3vw,40px) 28px;outline:none}
+.head{grid-area:head}
+.stage-slot{grid-area:stage;position:relative;min-height:440px}
+.evidence{grid-area:evidence}
+.inspector{grid-area:inspect}
+
+.instruction{margin:0 0 18px;max-width:34ch}
+.instruction span{display:block;font-size:14px;color:var(--ink-2);margin-bottom:2px}
+.instruction q{font-size:clamp(19px,1.6vw,23px);line-height:1.35;quotes:"\201C" "\201D"}
+#headline{margin:0;font-weight:800;font-stretch:125%;font-size:clamp(46px,6.2vw,98px);line-height:.92;letter-spacing:-.035em;overflow-wrap:anywhere}
+#proposal-detail{margin:12px 0 0;color:var(--ink-2);max-width:42ch}
+
+.evidence{margin-top:26px}
+.evidence h2{font-size:15px;font-weight:650;margin:0 0 8px}
+#terms{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+#terms li{border-bottom:1px solid var(--rule)}
+.term{display:grid;grid-template-columns:10px minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:14px;width:100%;text-align:left;background:none;border:0;padding:12px 10px 12px 0;align-items:center}
+.term:hover{background:#e7ebe8}
+.term[aria-pressed=true]{background:var(--sheet)}
+.chip{grid-row:1/3;align-self:stretch;width:10px;border-radius:0 3px 3px 0;background:var(--tint)}
+.term[aria-pressed=true] .chip{width:10px;box-shadow:inset 0 0 0 2px #0002}
+.term-name{font-weight:650}
+.term-value{grid-column:2;font:700 17px/1.3 var(--typed);overflow-wrap:anywhere}
+.term-verdict{grid-column:3;grid-row:1/3;font-size:14px;font-weight:650;text-align:right;min-width:9.5em}
+.term-verdict[data-state=fail]{color:var(--stamp)}
+.term-verdict[data-state=pass]{color:var(--notary)}
+.term-verdict[data-state=pending]{color:var(--ink-2);font-weight:450}
+
+.actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px 16px;margin-top:20px}
+#check{background:var(--ink);color:var(--sheet);border:0;border-radius:999px;padding:13px 24px;font-weight:650;font-size:16px}
+#check:hover{background:#2c3a35}
+#export{font-size:14px}
+#export:disabled{opacity:.45;cursor:default}
+#verdict{font:800 17px/1 var(--sans);font-stretch:112%;letter-spacing:.02em;text-transform:uppercase;padding:9px 12px 8px;border:2.5px solid currentColor;border-radius:4px}
+#verdict[data-state=fail]{color:var(--stamp)}
+#verdict[data-state=pass]{color:var(--notary)}
+#verdict[data-state=pending]{color:var(--ink-2);border-style:dashed;text-transform:none;font-weight:550;font-stretch:100%;letter-spacing:0;font-size:14px}
+
+/* Exhibit */
+#exhibit{position:absolute;inset:0;background:var(--blotter);border-radius:14px;overflow:hidden;touch-action:pan-y}
+#exhibit canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .5s}
+#exhibit.ready canvas{opacity:1}
+#exhibit.ready .paper-fallback{display:none}
+.tag{position:absolute;left:0;top:0;pointer-events:none;font-size:13px;line-height:1.25;padding:6px 9px;border-radius:6px;background:#fbfbf8f0;color:var(--ink);box-shadow:0 6px 18px #0004;white-space:nowrap;transition:opacity .25s}
+.tag b{display:block;font-family:var(--typed);font-size:15px}
+.tag[data-kind=allowed] b{color:var(--notary);font-family:var(--sans);font-weight:750}
+.tag.off{opacity:0}
+.view-controls{position:absolute;right:12px;bottom:12px;display:flex;gap:6px}
+.view-controls button{background:#fbfbf81f;color:#eef2ef;border:1px solid #fbfbf840;border-radius:999px;padding:6px 12px;font-size:13px}
+.view-controls button:hover{background:#fbfbf833}
+.hint{position:absolute;left:14px;bottom:14px;margin:0;color:#c9d3cf;font-size:13px;max-width:28ch}
+
+/* 2D fallback when WebGL is unavailable or still loading */
+.paper-fallback{position:absolute;inset:0;display:grid;place-items:center}
+.pf-stack{position:relative;width:min(62%,330px);aspect-ratio:3/2}
+.pf-sheet{position:absolute;inset:0;border-radius:6px;box-shadow:0 10px 24px #0005;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.pf-sheet[data-term=data]{background:var(--copy-blue);transform:translate(10px,10px)}
+.pf-sheet[data-term=renewal]{background:var(--pink);transform:translate(6px,6px)}
+.pf-sheet[data-term=charge]{background:var(--canary);transform:translate(3px,3px)}
+.pf-sheet.top{background:var(--sheet);display:flex;align-items:center;padding:0 7%;font:800 clamp(20px,3.6vw,40px)/1 var(--sans);font-stretch:125%}
+.pf-sheet.out{transform:translate(48%,26%) rotate(2deg)!important;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;padding:8%;font:700 15px/1.2 var(--typed)}
+
+/* Inspector */
+.inspector{margin-top:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;padding:14px 0 0;border-top:3px solid var(--tint,var(--rule))}
+.inspector h2{grid-column:1/-1;margin:0;font-size:15px;font-weight:650}
+.inspector dl{display:contents}
+.inspector div{min-width:0}
+.inspector dt{font-size:13px;color:var(--ink-2)}
+.inspector dd{margin:2px 0 0;font-weight:700;font-size:18px;overflow-wrap:anywhere}
+#ins-requested{font-family:var(--typed)}
+#ins-allowed{color:var(--notary)}
+#ins-term[data-state=fail]{color:var(--stamp)}
+#ins-term[data-state=pass]{color:var(--notary)}
+#ins-term[data-state=pending]{color:var(--ink-2);font-weight:500}
+#ins-note{grid-column:1/-1;margin:0;font-size:14px;color:var(--ink-2)}
+
+/* Intro: the exhibit fills the screen, then lands in its slot */
+html.intro body{overflow:hidden}
+html.intro #exhibit{position:fixed;inset:0;border-radius:0;z-index:30}
+html.intro .lab-ui{opacity:0}
+.lab-ui{transition:opacity .55s ease}
+#exhibit.landing{transition:top .7s cubic-bezier(.65,0,.25,1),left .7s cubic-bezier(.65,0,.25,1),width .7s cubic-bezier(.65,0,.25,1),height .7s cubic-bezier(.65,0,.25,1),border-radius .7s}
+.intro-ui{position:absolute;inset:0;pointer-events:none;display:none}
+html.intro .intro-ui{display:block}
+html.intro .view-controls,html.intro .hint{display:none}
+#skip{pointer-events:auto;position:absolute;top:18px;right:18px;background:#fbfbf8;color:var(--ink);border:0;border-radius:999px;padding:10px 18px;font-weight:650}
+.caption{text-shadow:0 2px 24px #0008;position:absolute;left:clamp(20px,5vw,72px);bottom:clamp(28px,9vh,96px);margin:0;max-width:14ch;color:#f4f6f3;font:800 clamp(40px,7vw,104px)/.95 var(--sans);font-stretch:125%;letter-spacing:-.035em;opacity:0;transform:translateY(12px);transition:opacity .35s,transform .45s cubic-bezier(.2,.7,.2,1)}
+.caption.on{opacity:1;transform:none}
+.caption small{display:block;font-size:.34em;font-weight:500;font-stretch:100%;letter-spacing:0;line-height:1.3;margin-bottom:.4em;color:#c9d3cf}
+
+/* Live proof */
+#live{padding:36px clamp(16px,3vw,40px) 56px;border-top:1px solid var(--rule)}
+#live h2{margin:0;font-size:clamp(26px,3vw,38px);font-weight:800;font-stretch:118%;letter-spacing:-.02em}
+#live > p{max-width:62ch;color:var(--ink-2);margin:8px 0 16px}
+.live-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+#live-run{background:var(--sheet);border:1px solid var(--ink);border-radius:999px;padding:11px 20px;font-weight:650}
+#live-run:disabled{opacity:.45;cursor:default}
+#live-status{margin:0;font-size:14px;color:var(--ink-2)}
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.lane{margin:0;min-width:0}
+.lane figcaption{display:flex;justify-content:space-between;gap:12px;font-size:14px;font-weight:650;margin-bottom:8px}
+.lane figcaption b[data-state=fail]{color:var(--stamp)}
+.lane figcaption b[data-state=pass]{color:var(--notary)}
+.lane .shot{aspect-ratio:11/8;background:var(--blotter);border-radius:10px;overflow:hidden}
+.lane img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.lane img:not([src]){visibility:hidden}
+.lane ol{margin:8px 0 0;padding-left:20px;font-size:13px;color:var(--ink-2)}
+
+footer{padding:18px clamp(16px,3vw,40px) 28px;font-size:13px;color:var(--ink-2);border-top:1px solid var(--rule)}
+
+@media (max-width:900px){
+  #lab{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "stage" "evidence" "inspect"}
+  .stage-slot{min-height:0;height:min(62vw,420px);margin-top:18px}
+  .instruction{max-width:none}
+}
+@media (max-width:560px){
+  .bar{gap:10px;flex-wrap:wrap;padding-bottom:0}
+  #cases{order:3;flex-basis:100%;margin:0 -16px;padding:0 6px}
+  .bar .ghost{margin-left:auto}
+  .stage-slot{height:68vw;min-height:220px}
+  .term{grid-template-columns:10px minmax(0,1fr);row-gap:2px}
+  .term-verdict{grid-column:2;grid-row:auto;text-align:left;min-width:0}
+  .inspector{grid-template-columns:1fr 1fr}
+  .inspector div:last-of-type{grid-column:1/-1}
+  .lanes{grid-template-columns:1fr}
+  .hint{display:none}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="bar lab-ui">
+  <a class="wordmark" href="./">CoercionGuard</a>
+  <nav id="cases" aria-label="Cases"></nav>
+  <button class="ghost" id="replay" hidden>Replay intro</button>
+</header>
+
+<main id="lab" tabindex="-1" aria-labelledby="headline">
+  <section class="head lab-ui" aria-label="Proposal">
+    <p class="instruction"><span>Your instruction</span><q id="intent"></q></p>
+    <h1 id="headline"></h1>
+    <p id="proposal-detail"></p>
+  </section>
+
+  <div class="stage-slot" id="stage-slot">
+    <div id="exhibit" role="img" aria-label="">
+      <div class="paper-fallback" aria-hidden="true"><div class="pf-stack">
+        <div class="pf-sheet" data-term="data"></div><div class="pf-sheet" data-term="renewal"></div><div class="pf-sheet" data-term="charge"></div>
+        <div class="pf-sheet top" id="pf-top"></div>
+      </div></div>
+      <div class="tag off" data-kind="allowed" id="tag-allowed" aria-hidden="true"></div>
+      <div class="tag off" data-kind="requested" id="tag-requested" aria-hidden="true"></div>
+      <p class="hint" id="hint" hidden>Drag to turn the form. Select a copy to pull it out.</p>
+      <div class="view-controls" id="view-controls" hidden><button id="reset-view" type="button">Reset view</button></div>
+      <div class="intro-ui">
+        <button id="skip" type="button">Skip to lab</button>
+        <p class="caption" id="cap-1">Looks free.</p>
+        <p class="caption" id="cap-2"><small>Underneath the headline</small>It renews automatically.</p>
+        <p class="caption" id="cap-3"><small>Your instruction</small>No recurring billing.</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="evidence lab-ui" aria-labelledby="terms-title">
+    <h2 id="terms-title">What the proposal asks for</h2>
+    <ol id="terms"></ol>
+    <div class="actions">
+      <button id="check" type="button">Check proposal</button>
+      <p id="verdict" role="status" data-state="pending">Not checked yet</p>
+      <button class="ghost" id="export" type="button" disabled>Export decision</button>
+    </div>
+  </section>
+
+  <section class="inspector lab-ui" id="inspector" aria-labelledby="ins-title">
+    <h2 id="ins-title"></h2>
+    <dl>
+      <div><dt>You allowed</dt><dd id="ins-allowed"></dd></div>
+      <div><dt>Proposal asks</dt><dd id="ins-requested"></dd></div>
+      <div><dt>This term</dt><dd id="ins-term"></dd></div>
+    </dl>
+    <p id="ins-note"></p>
+  </section>
+</main>
+
+<section id="live" class="lab-ui" aria-labelledby="live-title">
+  <h2 id="live-title">Run it on a real page</h2>
+  <p>The same trap on a cached checkout page. A headless browser agent attempts your instruction twice at once: alone, and behind CoercionGuard.</p>
+  <div class="live-row"><button id="live-run" type="button" disabled>Run live agent</button><p id="live-status" role="status">Checking for the CoercionGuard API…</p></div>
+  <div class="lanes" id="lanes" hidden>
+    <figure class="lane"><figcaption>Agent alone <b id="u-state"></b></figcaption><div class="shot"><img id="u-shot" alt="The trap page as the agent alone saw it"></div><ol id="u-log"></ol></figure>
+    <figure class="lane"><figcaption>Agent with CoercionGuard <b id="p-state"></b></figcaption><div class="shot"><img id="p-shot" alt="The same page after CoercionGuard rewrote it"></div><ol id="p-log"></ol></figure>
+  </div>
+</section>
+<footer class="lab-ui">Synthetic cases, evaluated in your browser. Checking a proposal never runs the action.</footer>
+
 <script type="module">
-const dialog=document.querySelector('#opening');
-const stage=document.querySelector('#stage');
-const dock=document.querySelector('#intro-scene');
-const replay=document.querySelector('#play-opening');
-const skip=document.querySelector('#skip-opening');
-const chapter=document.querySelector('#chapter');
-const motion=matchMedia('(prefers-reduced-motion: reduce)');
-const specimen=document.querySelector('#sculpture').content.firstElementChild.cloneNode(true);
-for(const plate of specimen.children){
-  for(const side of ['left','right','top','bottom','reverse']){
-    const face=document.createElement('i');
-    face.className='edge-face edge-'+side;
-    plate.append(face);
-  }
-}
-stage.append(specimen);
-replay.hidden=motion.matches;
-let deadline, secondBeat, term;
-function showTerm(){
-  if(!term||dialog.open)return;
-  const back=specimen.querySelector('.plate-back');
-  const front=specimen.querySelector('.plate-front');
-  const finding=specimen.querySelector('.plate-renewal');
-  back.querySelector('span').textContent='AUTHORIZED';
-  back.querySelector('strong').textContent=term.allowed;
-  back.querySelector('small').textContent=term.name;
-  front.querySelector('span').textContent='PROPOSED';
-  front.querySelector('strong').firstChild.textContent=term.requested;
-  front.querySelector('small').hidden=true;
-  finding.querySelector('span').textContent=term.name;
-  finding.querySelector('strong').textContent='Outside scope';
-  finding.querySelector('small').textContent='Pause for user review';
-  finding.hidden=term.state!=='pause';
-  stage.dataset.termState=term.state;
-  document.querySelector('#stage-caption').textContent=term.name+' · '+(term.state==='pause'?'Outside authority':term.state==='pass'?'Within authority':'Awaiting check');
-}
-document.addEventListener('guard-term',event=>{term=event.detail;showTerm()});
-function finish(){
-  clearTimeout(deadline);
-  clearTimeout(secondBeat);
-  dialog.close();
-  stage.append(specimen);
-  setLabels(Number(stage.dataset.case||0));
-  specimen.classList.remove('performing');
-  showTerm();
-  document.querySelector('#lab').focus({preventScroll:true});
-}
-function play(){
-  if(motion.matches||dialog.open)return;
-  specimen.classList.remove('performing');
-  setLabels(0);
-  dock.append(specimen);
-  chapter.textContent='Read the proposed action';
-  dialog.showModal();
-  requestAnimationFrame(()=>{if(dialog.open)specimen.classList.add('performing')});
-  secondBeat=setTimeout(()=>{chapter.textContent='Recurring billing exceeds the instruction'},1700);
-  deadline=setTimeout(finish,4300);
-}
-replay.onclick=play;
-skip.onclick=finish;
-dialog.addEventListener('cancel',event=>{event.preventDefault();finish()});
-motion.addEventListener('change',()=>{if(motion.matches&&dialog.open)finish();replay.hidden=motion.matches});
-document.addEventListener('guard-state',event=>{stage.dataset.state=event.detail});
-const labels=[
-  ['Trial only','Recurring billing excluded','TRIAL PROPOSAL','$0','RECURRING BILLING','Auto-renewal','Outside user authority'],
-  ['Up to $40','Optional extras excluded','PURCHASE PROPOSAL','$49','OPTIONAL SERVICE','+$9','Outside user authority'],
-  ['Email only','Location excluded','DATA REQUEST','Email','EXTRA DATA','Location','Outside user authority'],
-  ['Read only','Payment and data excluded','ORDER SUMMARY','$0','','','']
+// ---------- Cases and evaluator (independent of any animation) ----------
+const FIXTURES=[
+  {id:'free-trial',name:'Free trial',sandbox:'streamflix_trial',intent:'Start a free trial without agreeing to recurring billing.',
+   headline:'$0 due now',policy:{maxCost:0,recurring:false,fields:[]},
+   action:{label:'Start trial with automatic renewal',description:'The trial converts to a paid plan that renews on its own.',cost:0,recurring:true,fields:[]}},
+  {id:'add-on',name:'Optional add-on',sandbox:'skyhop_flight',intent:'Review a $40 purchase without optional extras.',
+   headline:'$49 total',policy:{maxCost:4000,recurring:false,fields:[]},
+   action:{label:'Proceed with a $49 total',description:'The total includes a $9 optional service you did not ask for.',cost:4900,recurring:false,fields:[]}},
+  {id:'data',name:'Data consent',sandbox:'ebook_consent',intent:'Share only an email address to receive updates.',
+   headline:'Email + Location',policy:{maxCost:0,recurring:false,fields:['Email']},
+   action:{label:'Share email and location',description:'The form also collects your location.',cost:0,recurring:false,fields:['Email','Location']}},
+  {id:'control',name:'Allowed control',sandbox:null,intent:'Read the order summary without paying or sharing data.',
+   headline:'Order summary',policy:{maxCost:0,recurring:false,fields:[]},
+   action:{label:'Open order summary',description:'Reads the order summary. Nothing is charged or shared.',cost:0,recurring:false,fields:[]}},
 ];
-function setLabels(index){
-  const [allowed,scope,proposal,amount,exception,title,reason]=labels[index]??labels[0];
-  const back=specimen.querySelector('.plate-back'),front=specimen.querySelector('.plate-front'),renewal=specimen.querySelector('.plate-renewal');
-  back.querySelector('strong').textContent=allowed;back.querySelector('small').textContent=scope;
-  front.querySelector('span').textContent=proposal;
-  front.querySelector('strong').firstChild.textContent=amount;
-  front.querySelector('small').hidden=index!==0;
-  renewal.querySelector('span').textContent=exception;renewal.querySelector('strong').textContent=title;
-  renewal.querySelector('small').textContent=reason;renewal.hidden=index===3;
-}
-document.addEventListener('guard-case',event=>{if(!dialog.open)setLabels(event.detail)});
-let seen=false;
-try{seen=sessionStorage.getItem('cg-receipt-intro')==='seen';sessionStorage.setItem('cg-receipt-intro','seen')}catch{}
-if(!seen&&!location.hash)play();
-</script><script type="module">
-function evaluate(intent, action) {
-  const checks = [
-    { name: 'Immediate charge', pass: action.cost <= intent.maxCost },
-    { name: 'Recurring billing', pass: !action.recurring || intent.recurring },
-    { name: 'Personal data scope', pass: action.fields.every(field => intent.fields.includes(field)) }
+const TERMS=[
+  {key:'charge',name:'Immediate charge',tab:'Charge',tint:'#f3e08a'},
+  {key:'renewal',name:'Recurring billing',tab:'Renewal',tint:'#f2b8c6'},
+  {key:'data',name:'Personal data scope',tab:'Data',tint:'#b9d3ec'},
+];
+const usd=c=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:c%100?2:0}).format(c/100);
+function evaluate(policy,action){
+  const checks=[
+    {key:'charge',name:'Immediate charge',pass:action.cost<=policy.maxCost},
+    {key:'renewal',name:'Recurring billing',pass:!action.recurring||policy.recurring},
+    {key:'data',name:'Personal data scope',pass:action.fields.every(f=>policy.fields.includes(f))},
   ];
-  return { decision: checks.every(check => check.pass) ? 'WITHIN POLICY' : 'REVIEW REQUIRED', checks };
+  return {decision:checks.every(c=>c.pass)?'WITHIN POLICY':'REVIEW REQUIRED',checks};
 }
+function termValues(fx){
+  const {policy:p,action:a}=fx;
+  return {
+    charge:{allowed:p.maxCost?'Up to '+usd(p.maxCost):'No charge',requested:a.cost?usd(a.cost)+' total':'$0 now'},
+    renewal:{allowed:p.recurring?'Allowed':'Excluded',requested:a.recurring?'Auto-renewal':'None'},
+    data:{allowed:p.fields.join(' + ')||'None',requested:a.fields.join(' + ')||'None'},
+  };
+}
+const firstFailing=r=>r?.checks.find(c=>!c.pass)?.key;
+const DEFAULT_TERM={'free-trial':'renewal','add-on':'charge',data:'data',control:'charge'};
 
+// ---------- One source of truth ----------
+const state={caseIndex:0,term:'renewal',result:null};
+const listeners=new Set();
+function setState(patch){Object.assign(state,patch);render();listeners.forEach(f=>f(state))}
 
-const fixtures = [
-  {name:'Free trial',intent:'Start a free trial without agreeing to recurring billing.', policy:{maxCost:0,recurring:false,fields:[]},action:{label:'Start trial with automatic renewal',description:'The proposed action authorizes a new recurring charge after the trial.',cost:0,recurring:true,fields:[]}},
-  {name:'Optional add-on',intent:'Review a $40 purchase without optional extras.',policy:{maxCost:4000,recurring:false,fields:[]},action:{label:'Proceed with a $49 total',description:'The proposed total includes a $9 optional service.',cost:4900,recurring:false,fields:[]}},
-  {name:'Data consent',intent:'Share only an email address to receive updates.',policy:{maxCost:0,recurring:false,fields:['Email']},action:{label:'Share email and location',description:'Location is outside the permission granted by the user.',cost:0,recurring:false,fields:['Email','Location']}},
-  {name:'Allowed control',intent:'Read the order summary without paying or sharing data.',policy:{maxCost:0,recurring:false,fields:[]},action:{label:'Open order summary',description:'The proposed action reads the order summary.',cost:0,recurring:false,fields:[]}}
-];
 const $=id=>document.getElementById(id);
-const node=(tag,value)=>Object.assign(document.createElement(tag),{textContent:value});
-const currency=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
-let active=0,report=null,selected=0;
-function terms(){
-  const {policy,action}=fixtures[active];
-  const usd=cents=>currency.format(cents/100);
-  const fields=items=>items.join(', ')||'None';
-  return [
-    ['Immediate charge','Up to '+usd(policy.maxCost),usd(action.cost)],
-    ['Recurring billing',policy.recurring?'Allowed':'Excluded',action.recurring?'Auto-renewal':'None'],
-    ['Personal data scope',fields(policy.fields),fields(action.fields)]
-  ];
-}
-function inspect(index){
-  selected=index;
-  const [name,allowed,requested]=terms()[index];
-  const check=report?.checks[index];
-  $('rule-name').textContent=name;
-  $('allowed').textContent=allowed;
-  $('requested').textContent=requested;
-  $('rule-status').textContent=check?(check.pass?'Within scope':'Outside user authority'):'Pending evaluation';
-  $('rule-status').dataset.state=check?(check.pass?'pass':'pause'):'ready';
-  document.dispatchEvent(new CustomEvent('guard-term',{detail:{
-    name,allowed,requested,state:check?(check.pass?'pass':'pause'):'ready'
-  }}));
+const el=(tag,props={},kids=[])=>{const n=Object.assign(document.createElement(tag),props);n.append(...kids);return n};
 
-  [...$('facts').querySelectorAll('button')].forEach((button,i)=>{
-    button.setAttribute('aria-pressed',String(i===index));
-    const rowCheck=report?.checks[i];
-    button.dataset.state=rowCheck?(rowCheck.pass?'pass':'pause'):'ready';
-    const status=button.querySelector('.term-outcome');
-    status.textContent=rowCheck?(rowCheck.pass?'Within scope':'Outside scope'):'';
-    status.hidden=!rowCheck;
-    const [label,,value]=terms()[i];
-    button.setAttribute('aria-label','Inspect '+label+': '+value+(rowCheck?' · '+status.textContent:''));
+FIXTURES.forEach((fx,i)=>$('cases').append(el('button',{type:'button',textContent:fx.name,onclick:()=>selectCase(i)})));
+TERMS.forEach(t=>{
+  const b=el('button',{type:'button',className:'term',onclick:()=>setState({term:t.key})});
+  b.dataset.key=t.key;b.style.setProperty('--tint',t.tint);
+  b.append(el('span',{className:'chip'}),el('span',{className:'term-name',textContent:t.name}),el('span',{className:'term-value'}),el('span',{className:'term-verdict'}));
+  $('terms').append(el('li',{},[b]));
+});
+function selectCase(i){setState({caseIndex:i,term:DEFAULT_TERM[FIXTURES[i].id],result:null})}
+
+function render(){
+  const fx=FIXTURES[state.caseIndex],vals=termValues(fx),r=state.result;
+  [...$('cases').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===state.caseIndex)));
+  $('intent').textContent=fx.intent;
+  $('headline').textContent=fx.headline;
+  $('proposal-detail').textContent=fx.action.label+'. '+fx.action.description;
+  for(const b of $('terms').querySelectorAll('.term')){
+    const k=b.dataset.key,check=r?.checks.find(c=>c.key===k);
+    b.setAttribute('aria-pressed',String(k===state.term));
+    b.querySelector('.term-value').textContent=vals[k].requested;
+    const v=b.querySelector('.term-verdict');
+    v.dataset.state=check?(check.pass?'pass':'fail'):'pending';
+    v.textContent=check?(check.pass?'✓ Within scope':'✕ Outside scope'):'Not checked';
+    b.setAttribute('aria-label',`${TERMS.find(t=>t.key===k).name}: proposal asks ${vals[k].requested}. ${v.textContent}`);
+  }
+  const verdict=$('verdict');
+  verdict.dataset.state=r?(r.decision==='WITHIN POLICY'?'pass':'fail'):'pending';
+  verdict.textContent=r?(r.decision==='WITHIN POLICY'?'Within policy':'Review required'):'Not checked yet';
+  $('export').disabled=!r;
+  const t=TERMS.find(t=>t.key===state.term),check=r?.checks.find(c=>c.key===state.term);
+  $('inspector').style.setProperty('--tint',t.tint);
+  $('ins-title').textContent=t.name;
+  $('ins-allowed').textContent=vals[state.term].allowed;
+  $('ins-requested').textContent=vals[state.term].requested;
+  const it=$('ins-term');
+  it.dataset.state=check?(check.pass?'pass':'fail'):'pending';
+  it.textContent=check?(check.pass?'Within scope':'Outside scope'):'Not checked';
+  const failing=r?.checks.filter(c=>!c.pass).map(c=>c.name)??[];
+  $('ins-note').textContent=!r?'Check the proposal to compare every term with your instruction.'
+    :check.pass&&failing.length?`This term is fine. The proposal still needs review because of ${failing.join(' and ').toLowerCase()}.`
+    :check.pass?'Every term matches your instruction.'
+    :`This term goes beyond what you allowed, so the whole proposal needs review.`;
+  $('exhibit').setAttribute('aria-label',`Carbon-copy form for ${fx.name}. ${t.name} copy pulled out: you allowed ${vals[state.term].allowed}, proposal asks ${vals[state.term].requested}.`);
+  $('pf-top').textContent=fx.headline;
+  document.querySelectorAll('.pf-sheet[data-term]').forEach(s=>{
+    const on=s.dataset.term===state.term;s.classList.toggle('out',on);s.textContent=on?vals[s.dataset.term].requested:'';
   });
 }
-function renderTerms(){
-  $('facts').replaceChildren(...terms().map(([name,,requested],i)=>{
-    const row=node('div','');
-    const label=node('dt',name), cell=node('dd',''), button=node('button','');
-    const value=node('span',requested), status=node('span','');
-    status.className='term-outcome';
-    button.append(value,status);
-    button.type='button';
-    button.setAttribute('aria-label','Inspect '+name+': '+requested);
-    button.onclick=()=>inspect(i);
-    cell.append(button);row.append(label,cell);
-    return row;
-  }));
-  inspect(selected);
-}
-function show(index){
-  active=index;report=null;
-  document.querySelector('#stage').dataset.case=String(index);
-  document.dispatchEvent(new CustomEvent('guard-case',{detail:index}));
-  document.dispatchEvent(new CustomEvent('guard-state',{detail:'ready'}));
-  const {intent,action}=fixtures[index];
-  $('intent').textContent=intent;
-  $('action').textContent=action.label;
-  $('detail').textContent=action.description;
-  selected=index===0?1:index===2?2:0;
-  renderTerms();
-  $('badge').textContent='READY';$('badge').className='neutral';
-  $('verdict').textContent='Awaiting evaluation';
-  $('explanation').textContent='Check the proposal to see which permissions it needs.';
-  $('status').textContent='Local evaluation. No browser action is executed.';
-  $('export').disabled=true;
-  [...$('cases').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
-}
-for(const [index,fixture] of fixtures.entries()){
-  const button=node('button',fixture.name);
-  button.onclick=()=>show(index);
-  $('cases').append(button);
-}
-$('run').onclick=()=>{
-  const {name,intent,policy,action}=fixtures[active];
-  const result=evaluate(policy,action), pass=result.decision==='WITHIN POLICY';
-  report={fixture:name,intent,policy,action,...result,executed:false};
-  $('badge').textContent=pass?'PASS':'PAUSE';$('badge').className=pass?'pass':'pause';
-  $('verdict').textContent=pass?'Within user authority':'Pause for user review';
-  const outside=result.checks.filter(check=>!check.pass).length;
-  $('explanation').textContent=pass?'All three terms are within the user’s instruction.':outside+' of '+result.checks.length+' terms outside the user’s instruction.';
-  const conflict=result.checks.findIndex(check=>!check.pass);
-  inspect(conflict>=0?conflict:selected);
-  $('status').textContent=result.decision+' · No action executed';
-  $('export').disabled=false;
-  document.dispatchEvent(new CustomEvent('guard-state',{detail:pass?'pass':'pause'}));
+
+$('check').onclick=()=>{
+  const fx=FIXTURES[state.caseIndex],result=evaluate(fx.policy,fx.action);
+  setState({result,term:firstFailing(result)??state.term});
 };
 $('export').onclick=()=>{
-  if(!report)return;
+  const fx=FIXTURES[state.caseIndex],r=state.result;if(!r)return;
+  const vals=termValues(fx);
+  const report={fixture:fx.name,intent:fx.intent,policy:fx.policy,action:fx.action,
+    checks:r.checks.map(c=>({...c,authorized:vals[c.key].allowed,requested:vals[c.key].requested})),
+    decision:r.decision,executed:false,exported_at:new Date().toISOString()};
   const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));
-  const link=document.createElement('a');link.href=url;link.download='coercionguard-decision.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  el('a',{href:url,download:`coercionguard-${fx.id}.json`}).click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
-show(0);
-</script></body></html>
+render();
+
+// ---------- 3D exhibit (optional; the lab works without it) ----------
+const motion=matchMedia('(prefers-reduced-motion: reduce)');
+let scene=null;
+const sceneReady=(async()=>{
+  try{
+    const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');
+    await document.fonts.load('800 40px Archivo').catch(()=>{});
+    await document.fonts.load('700 40px "Courier Prime"').catch(()=>{});
+    scene=createScene(THREE,$('exhibit'));
+    scene.setInstant(motion.matches);
+    scene.show(state,{snap:true});
+    listeners.add(s=>scene.show(s,{snap:motion.matches}));
+    $('exhibit').classList.add('ready');
+    $('view-controls').hidden=false;$('hint').hidden=false;
+    return true;
+  }catch(err){console.warn('3D exhibit unavailable, using the flat version:',err);return false}
+})();
+
+function createScene(THREE,host){
+  const canvas=document.createElement('canvas');host.prepend(canvas);
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+  const s=new THREE.Scene();s.background=new THREE.Color('#2f3a38');
+  const camera=new THREE.PerspectiveCamera(30,1,.1,80);
+
+  // Light table: soft key from upper left, cool rim, a pool of light on the blotter.
+  s.add(new THREE.HemisphereLight('#f4f6f2','#1f2725',.75));
+  const key=new THREE.DirectionalLight('#fff6e8',2.4);key.position.set(-3.5,8,4.5);key.castShadow=true;
+  key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:1,far:20});key.shadow.bias=-.0004;key.shadow.radius=4;
+  s.add(key);
+  const rim=new THREE.DirectionalLight('#a9c7ff',.7);rim.position.set(5,3,-5);s.add(rim);
+  const table=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:'#2f3a38',roughness:.96}));
+  table.rotation.x=-Math.PI/2;table.receiveShadow=true;s.add(table);
+  const pool=new THREE.Mesh(new THREE.PlaneGeometry(12,9),new THREE.MeshBasicMaterial({map:radial(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.55}));
+  pool.rotation.x=-Math.PI/2;pool.position.set(.4,.002,.2);s.add(pool);
+
+  const rig=new THREE.Group();s.add(rig);
+  const W=3,H=2,TAB=.42,S=300;
+
+  function canvasTex(w,h){
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=renderer.capabilities.getMaxAnisotropy();
+    return {c,ctx:c.getContext('2d'),t};
+  }
+  function radial(){
+    const {c,ctx,t}=canvasTex(256,256);const g=ctx.createRadialGradient(128,128,0,128,128,128);
+    g.addColorStop(0,'#3d4c48');g.addColorStop(1,'#000');ctx.fillStyle=g;ctx.fillRect(0,0,256,256);return t;
+  }
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  function paper(ctx,w,h,tint){
+    ctx.fillStyle=tint;ctx.fillRect(0,0,w,h);seed=7;
+    for(let i=0;i<w*h/90;i++){ctx.fillStyle=rnd()>.5?'#ffffff12':'#00000009';ctx.fillRect(rnd()*w,rnd()*h,1+rnd()*2,1)}
+  }
+  function fit(ctx,text,font,maxW,size){ctx.font=font(size);while(ctx.measureText(text).width>maxW&&size>10){size-=2;ctx.font=font(size)}return size}
+
+  // A copy is a rounded sheet with an index tab, extruded with a small bevel.
+  function rr(shape,x,y,w,h,r){shape.moveTo(x+r,y);shape.lineTo(x+w-r,y);shape.quadraticCurveTo(x+w,y,x+w,y+r);shape.lineTo(x+w,y+h-r);shape.quadraticCurveTo(x+w,y+h,x+w-r,y+h);shape.lineTo(x+r,y+h);shape.quadraticCurveTo(x,y+h,x,y+h-r);shape.lineTo(x,y+r);shape.quadraticCurveTo(x,y,x+r,y);return shape}
+  function sheetGeometry(tabY){
+    const shapes=[rr(new THREE.Shape(),-W/2,-H/2,W,H,.05)];
+    if(tabY!==null)shapes.push(rr(new THREE.Shape(),W/2-.1,tabY-.2,TAB+.1,.4,.06));
+    const g=new THREE.ExtrudeGeometry(shapes,{depth:.012,bevelEnabled:true,bevelThickness:.003,bevelSize:.003,bevelSegments:2,curveSegments:6});
+    g.rotateX(-Math.PI/2);return g;
+  }
+  function sheet(tint,tabY,texW){
+    const tex=canvasTex(Math.round(texW*S),H*S);
+    tex.t.repeat.set(1/texW,1/H);tex.t.offset.set(W/2/texW,.5);
+    const face=new THREE.MeshStandardMaterial({map:tex.t,roughness:.86});
+    const side=new THREE.MeshStandardMaterial({color:new THREE.Color(tint).multiplyScalar(.82),roughness:.9});
+    const mesh=new THREE.Mesh(sheetGeometry(tabY),[face,side]);mesh.castShadow=mesh.receiveShadow=true;
+    const g=new THREE.Group();g.add(mesh);rig.add(g);return {g,mesh,tex};
+  }
+
+  const STACK_X=-.9,PULL_X=1.9;
+  const layers={},TAB_Y={charge:.6,renewal:0,data:-.6},BASE_Y={charge:.18,renewal:.12,data:.06};
+  for(const t of TERMS){layers[t.key]=sheet(t.tint,TAB_Y[t.key],W+TAB);layers[t.key].mesh.userData.term=t.key}
+  const top=sheet('#fbfbf8',null,W);
+
+  // Acetate: the user's instruction, printed on clear film.
+  const acetate=new THREE.Group();rig.add(acetate);
+  const film=new THREE.Mesh(new THREE.BoxGeometry(1.7,.008,1.15),new THREE.MeshPhysicalMaterial({color:'#e9f4f0',transparent:true,opacity:.2,roughness:.08,clearcoat:1,clearcoatRoughness:.05,depthWrite:false}));
+  const printTex=canvasTex(680,460);
+  const print=new THREE.Mesh(new THREE.PlaneGeometry(1.7,1.15),new THREE.MeshBasicMaterial({map:printTex.t,transparent:true,depthWrite:false}));
+  print.rotation.x=-Math.PI/2;print.position.y=.006;acetate.add(film,print);
+
+  function drawLayer(t,vals){
+    const {ctx,c,t:tex}=layers[t.key].tex,w=c.width,h=c.height,px=x=>(x+W/2)*S,py=y=>(H/2-y)*S;
+    paper(ctx,w,h,t.tint);
+    ctx.strokeStyle='#00000018';ctx.lineWidth=2;
+    for(let y=-.9;y<.75;y+=.22){ctx.beginPath();ctx.moveTo(px(-1.4),py(y));ctx.lineTo(px(1.4),py(y));ctx.stroke()}
+    ctx.fillStyle='#18211e';ctx.font='650 30px Archivo';ctx.fillText(t.name,px(-1.02),py(.82));
+    ctx.font='400 20px Archivo';ctx.fillStyle='#18211ea0';ctx.fillText('Copy for your records',px(-1.02),py(.7));
+    // Field that sits under the acetate when this copy is pulled out.
+    ctx.strokeStyle='#18211e66';ctx.lineWidth=2;ctx.strokeRect(px(.08),py(.25),1.32*S,.95*S);
+    ctx.fillStyle='#18211eb0';ctx.font='500 22px Archivo';ctx.fillText('Proposal asks',px(.14),py(.08));
+    ctx.fillStyle='#18211e';const v=vals[t.key].requested;
+    const size=fit(ctx,v,s=>`700 ${s}px "Courier Prime"`,1.2*S,58);ctx.fillText(v,px(.14),py(-.42));
+    ctx.save();ctx.fillStyle='#18211e';ctx.font='650 22px Archivo';ctx.textAlign='center';
+    ctx.fillText(t.tab,px(W/2+TAB/2-.02),py(TAB_Y[t.key])+8);ctx.restore();
+    tex.needsUpdate=true;
+  }
+  function drawTop(fx,result){
+    const {ctx,c,t:tex}=top.tex,w=c.width,h=c.height;
+    paper(ctx,w,h,'#fbfbf8');
+    ctx.fillStyle='#18211e99';ctx.font='500 24px Archivo';ctx.fillText(fx.action.label,60,90);
+    ctx.fontStretch='expanded';const size=fit(ctx,fx.headline,s=>`800 ${s}px Archivo`,w-120,150);
+    ctx.fillStyle='#18211e';ctx.font=`800 ${size}px Archivo`;ctx.fillText(fx.headline,56,h/2+size*.32);
+    ctx.fontStretch='normal';ctx.fillStyle='#18211e22';for(let i=0;i<4;i++)ctx.fillRect(60,h-150+i*26,(w-120)*(i===3?.5:1),8);
+    if(result){
+      const pass=result.decision==='WITHIN POLICY',col=pass?'#1f4ea8':'#b3243f',label=pass?'WITHIN POLICY':'REVIEW REQUIRED';
+      ctx.save();ctx.translate(w-300,150);ctx.rotate(-.08);ctx.globalAlpha=.88;ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=7;
+      ctx.font='800 34px Archivo';const tw=ctx.measureText(label).width;ctx.strokeRect(-tw/2-22,-36,tw+44,64);ctx.textAlign='center';ctx.fillText(label,0,10);ctx.restore();
+    }
+    tex.needsUpdate=true;
+  }
+  function drawAcetate(term,vals,check,hint){
+    const {ctx,c,t:tex}=printTex,w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle='#1f4ea8cc';ctx.lineWidth=3;ctx.strokeRect(10,10,w-20,h-20);
+    for(const [x,y] of [[10,10],[w-10,10],[10,h-10],[w-10,h-10]]){ctx.beginPath();ctx.moveTo(x-8,y);ctx.lineTo(x+8,y);ctx.moveTo(x,y-8);ctx.lineTo(x,y+8);ctx.stroke()}
+    ctx.fillStyle='#1f4ea8';ctx.font='600 26px Archivo';ctx.fillText('You allowed',36,58);
+    const v=vals[term].allowed,size=fit(ctx,v,s=>`750 ${s}px Archivo`,w*.5,58);ctx.font=`750 ${size}px Archivo`;ctx.fillText(v,36,58+size+6);
+    const stamp=check?(check.pass?['Within scope','#1f4ea8']:['Outside scope','#b3243f']):hint?['Not what you allowed','#b3243f']:null;
+    if(stamp){ctx.save();ctx.translate(w-36,96);ctx.rotate(-.05);ctx.fillStyle=stamp[1];ctx.strokeStyle=stamp[1];ctx.lineWidth=4;ctx.font='800 30px Archivo';ctx.textAlign='right';
+      const tw=ctx.measureText(stamp[0]).width;ctx.strokeRect(-tw-16,-34,tw+32,48);ctx.fillText(stamp[0],0,0);ctx.restore()}
+    tex.needsUpdate=true;
+  }
+
+  // Interruptible motion: every animated value eases toward a target.
+  const anims=[];
+  function smooth(get,set,k=5){const a={v:get(),target:get(),k,set};anims.push(a);return a}
+  const v3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const cam={pos:v3(0,6,6),look:v3(0,0,0),up:v3(0,1,0)};
+  const tCam={pos:cam.pos.clone(),look:cam.look.clone(),up:cam.up.clone(),k:3};
+  const layerState={};
+  for(const t of TERMS){
+    const L=layers[t.key];L.g.position.set(STACK_X,BASE_Y[t.key],0);
+    layerState[t.key]={pos:L.g.position.clone(),target:L.g.position.clone(),rot:0,rotT:0,k:4};
+  }
+  top.g.position.set(STACK_X,.24,0);
+  const acetateState={pos:v3(PULL_X+.74,2.6,.275),target:v3(PULL_X+.74,.62,.275),op:0,opT:1,k:4};
+  acetate.position.copy(acetateState.pos);
+  let yaw=0,yawT=0,pitch=0,pitchT=0,instant=false;
+
+  function lab(aspect){
+    const look=v3(.75,.25,.15),dir=v3(.12,.82,1).normalize();
+    const v=THREE.MathUtils.degToRad(camera.fov),hf=2*Math.atan(Math.tan(v/2)*aspect);
+    const d=Math.max(3.45/Math.tan(hf/2),2.1/Math.tan(v/2))*1.02;
+    return {pos:look.clone().addScaledVector(dir,d),look,up:v3(0,1,0)};
+  }
+  function poseA(aspect){const v=THREE.MathUtils.degToRad(camera.fov),hf=2*Math.atan(Math.tan(v/2)*aspect);
+    const d=Math.max(1.9/Math.tan(hf/2),1.75/Math.tan(v/2)),look=v3(STACK_X+.3,.24,.55);return {pos:v3(look.x,.24+d,look.z+.001),look,up:v3(0,0,-1)}}
+  function poseB(aspect){const look=v3(1.3,.35,.5),dir=v3(.85,.42,1).normalize();return {pos:look.clone().addScaledVector(dir,7.6/Math.min(1.6,Math.max(.8,aspect))),look,up:v3(0,1,0)}}
+  function aimCamera(p,snap){tCam.pos.copy(p.pos);tCam.look.copy(p.look);tCam.up.copy(p.up);if(snap){cam.pos.copy(p.pos);cam.look.copy(p.look);cam.up.copy(p.up)}invalidate()}
+
+  function pull(term,snap){
+    for(const t of TERMS){
+      const st=layerState[t.key],out=t.key===term;
+      st.target.set(out?PULL_X:STACK_X,out?.38:BASE_Y[t.key],out?.05:0);st.rotT=out?-.06:0;
+      if(snap){st.pos.copy(st.target);st.rot=st.rotT}
+    }
+    acetateState.target.set(PULL_X+.74,.62,.275);
+    if(snap)acetateState.pos.copy(acetateState.target);
+    invalidate();
+  }
+
+  let current={caseIndex:-1,term:null,result:undefined},introHint=false;
+  function show(st,{snap=false}={}){
+    const fx=FIXTURES[st.caseIndex],vals=termValues(fx);
+    if(st.caseIndex!==current.caseIndex||st.result!==current.result){for(const t of TERMS)drawLayer(t,vals);drawTop(fx,st.result)}
+    drawAcetate(st.term,vals,st.result?.checks.find(c=>c.key===st.term),introHint);
+    if(st.term!==current.term||snap)pull(st.term,snap||instant);
+    current={caseIndex:st.caseIndex,term:st.term,result:st.result};
+    acetateState.opT=1;
+    tags.term=st.term;tags.vals=vals;
+    invalidate();
+  }
+
+  // Projected HTML tags keep the two compared values crisp at any size.
+  const tagAllowed=$('tag-allowed'),tagReq=$('tag-requested'),tags={term:null,vals:null,on:true};
+  function placeTags(){
+    const w=host.clientWidth,h=host.clientHeight,show=tags.on&&w>=520&&tags.vals;
+    tagAllowed.classList.toggle('off',!show);tagReq.classList.toggle('off',!show);if(!show)return;
+    const v=tags.vals[tags.term];
+    tagAllowed.replaceChildren('You allowed',el('b',{textContent:v.allowed}));
+    tagReq.replaceChildren('Proposal asks',el('b',{textContent:v.requested}));
+    const proj=(p,node,dx,dy)=>{const q=p.clone().applyMatrix4(rig.matrixWorld).project(camera);
+      const x=Math.min(Math.max((q.x+1)/2*w+dx,8),w-node.offsetWidth-8),y=Math.min(Math.max((1-q.y)/2*h+dy,8),h-node.offsetHeight-56);
+      node.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`};
+    proj(acetate.position.clone().add(v3(-.85,0,-.58)),tagAllowed,-tagAllowed.offsetWidth-6,-tagAllowed.offsetHeight-4);
+    const L=layers[tags.term].g.position;proj(v3(L.x+W/2,L.y,L.z+H/2),tagReq,8,4);
+  }
+
+  // Render on demand only.
+  let raf=0,last=0,visible=true,dragging=false;
+  const ease=(k,dt)=>instant?1:1-Math.exp(-k*dt);
+  function frame(now){
+    raf=0;const dt=Math.min(.05,(now-(last||now))/1000);last=now;let moving=false;
+    const e=ease(tCam.k,dt);
+    for(const key of ['pos','look','up']){cam[key].lerp(tCam[key],e);if(cam[key].distanceTo(tCam[key])>1e-4)moving=true}
+    camera.position.copy(cam.pos);camera.up.copy(cam.up).normalize();camera.lookAt(cam.look);
+    for(const t of TERMS){const st=layerState[t.key],L=layers[t.key].g,f=ease(st.k,dt);
+      st.pos.lerp(st.target,f);st.rot+=(st.rotT-st.rot)*f;L.position.copy(st.pos);L.rotation.y=st.rot;
+      if(st.pos.distanceTo(st.target)>1e-4||Math.abs(st.rotT-st.rot)>1e-4)moving=true}
+    const fa=ease(acetateState.k,dt);acetateState.pos.lerp(acetateState.target,fa);acetateState.op+=(acetateState.opT-acetateState.op)*fa;
+    acetate.position.copy(acetateState.pos);acetate.rotation.y=-.06;
+    film.material.opacity=.2*acetateState.op;print.material.opacity=acetateState.op;
+    if(acetateState.pos.distanceTo(acetateState.target)>1e-4||Math.abs(acetateState.opT-acetateState.op)>1e-3)moving=true;
+    const fy=ease(6,dt);yaw+=(yawT-yaw)*fy;pitch+=(pitchT-pitch)*fy;rig.rotation.set(pitch,yaw,0);
+    rig.position.set(0,0,0);if(Math.abs(yawT-yaw)>1e-4||Math.abs(pitchT-pitch)>1e-4)moving=true;
+    rig.updateMatrixWorld();
+    if(visible)renderer.render(s,camera);
+    placeTags();
+    if(moving||dragging)raf=requestAnimationFrame(frame);else last=0;
+  }
+  function invalidate(){if(!raf)raf=requestAnimationFrame(frame)}
+
+  function resize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+    if(mode==='lab')aimCamera(lab(camera.aspect),false);rig.updateMatrixWorld();renderer.render(s,camera);invalidate()}
+  let mode='lab';
+  new ResizeObserver(resize).observe(host);
+  new IntersectionObserver(([e])=>{visible=e.isIntersecting;if(visible)invalidate()}).observe(host);
+  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();host.classList.remove('ready')});
+
+  // Direct manipulation: drag turns the form, a click on a copy pulls it out.
+  const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();let down=null;
+  canvas.addEventListener('pointerdown',e=>{if(mode!=='lab')return;down={x:e.clientX,y:e.clientY,yaw:yawT,pitch:pitchT,moved:false};canvas.setPointerCapture(e.pointerId)});
+  canvas.addEventListener('pointermove',e=>{
+    if(!down)return;const dx=e.clientX-down.x,dy=e.clientY-down.y;
+    if(Math.abs(dx)+Math.abs(dy)>5){down.moved=true;dragging=true}
+    if(down.moved){yawT=THREE.MathUtils.clamp(down.yaw+dx*.006,-.6,.6);pitchT=THREE.MathUtils.clamp(down.pitch+dy*.003,-.12,.18);invalidate()}
+  });
+  canvas.addEventListener('pointerup',e=>{
+    const wasDrag=down?.moved;down=null;dragging=false;
+    if(wasDrag||mode!=='lab')return;
+    const r=canvas.getBoundingClientRect();ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+    ray.setFromCamera(ptr,camera);
+    const hit=ray.intersectObjects(TERMS.map(t=>layers[t.key].mesh))[0];
+    if(hit)setState({term:hit.object.userData.term});
+  });
+  canvas.addEventListener('pointercancel',()=>{down=null;dragging=false});
+  $('reset-view').onclick=()=>{yawT=0;pitchT=0;invalidate()};
+
+  // Intro choreography. Each beat only moves targets, so skipping or resizing mid-beat is safe.
+  function intro(){
+    mode='intro';instant=false;tags.on=false;yaw=yawT=pitch=pitchT=0;
+    const fx=FIXTURES[0],vals=termValues(fx);
+    for(const t of TERMS)drawLayer(t,vals);drawTop(fx,null);
+    introHint=true;drawAcetate('renewal',vals,null,true);
+    current={caseIndex:0,term:null,result:null};
+    for(const t of TERMS){const st=layerState[t.key];st.target.set(STACK_X,BASE_Y[t.key],0);st.pos.copy(st.target);st.rot=st.rotT=0;st.k=3.2}
+    acetateState.pos.set(PULL_X+.74,2.8,.275);acetateState.target.copy(acetateState.pos);acetateState.op=acetateState.opT=0;
+    aimCamera(poseA(camera.aspect),true);tCam.k=2.4;
+    return {
+      reveal(){layerState.renewal.target.set(PULL_X,.38,.05);layerState.renewal.rotT=-.06;aimCamera(poseB(camera.aspect),false)},
+      compare(){acetateState.target.set(PULL_X+.74,.62,.275);acetateState.opT=1;acetateState.k=3.6;tCam.k=2;aimCamera(lab(camera.aspect),false)},
+      finish(fast){mode='lab';introHint=false;tags.on=true;tCam.k=3;for(const t of TERMS)layerState[t.key].k=4;acetateState.k=4;acetateState.opT=1;
+        if(fast){acetateState.op=1;acetateState.target.set(PULL_X+.74,.62,.275);acetateState.pos.copy(acetateState.target)}
+        aimCamera(lab(camera.aspect),fast)},
+    };
+  }
+  function setInstant(on){instant=on}
+  resize();aimCamera(lab(camera.aspect),true);
+  return {show,intro,setInstant,resize,get current(){return current}};
+}
+
+// ---------- Opening: one sequence that lands in the lab ----------
+const html=document.documentElement,exhibit=$('exhibit');
+let introRun=null;
+function setInert(on){document.querySelectorAll('.lab-ui').forEach(n=>n.inert=on)}
+async function playIntro(){
+  if(motion.matches||introRun)return;
+  const ok=await Promise.race([sceneReady,new Promise(r=>setTimeout(()=>r(false),2500))]);
+  if(!ok||!scene)return;
+  const saved={caseIndex:state.caseIndex,term:state.term,result:state.result};
+  html.classList.add('intro');setInert(true);
+  const beats=scene.intro(),timers=[],caps=[1,2,3].map(i=>$('cap-'+i));
+  const cap=i=>caps.forEach((c,j)=>c.classList.toggle('on',j===i));
+  $('skip').focus({preventScroll:true});
+  let done;const finished=new Promise(r=>done=r);
+  const at=(ms,fn)=>timers.push(setTimeout(fn,ms));
+  cap(0);
+  at(900,()=>{cap(1);beats.reveal()});
+  at(1950,()=>{cap(2);beats.compare()});
+  at(2900,()=>land(false));
+  function land(fast){
+    timers.forEach(clearTimeout);cap(-1);
+    // Restore whatever the visitor had before the replay; the free-trial renewal copy is the anchor on first visit.
+    beats.finish(fast);
+    scene.show(saved,{snap:fast});
+    const slot=$('stage-slot').getBoundingClientRect();
+    if(fast){cleanup();return}
+    Object.assign(exhibit.style,{top:'0px',left:'0px',width:innerWidth+'px',height:innerHeight+'px'});
+    exhibit.getBoundingClientRect();
+    exhibit.classList.add('landing');
+    setInert(false);document.querySelectorAll('.lab-ui').forEach(n=>n.style.opacity='1');
+    Object.assign(exhibit.style,{top:slot.top+'px',left:slot.left+'px',width:slot.width+'px',height:slot.height+'px',borderRadius:'14px'});
+    timers.push(setTimeout(cleanup,720));
+  }
+  function cleanup(){
+    timers.forEach(clearTimeout);
+    exhibit.classList.remove('landing');exhibit.removeAttribute('style');
+    document.querySelectorAll('.lab-ui').forEach(n=>n.style.removeProperty('opacity'));
+    html.classList.remove('intro');setInert(false);
+    scene.resize();
+    document.querySelector(`.term[data-key="${state.term}"]`)?.focus({preventScroll:true});
+    introRun=null;done();
+  }
+  introRun={skip:()=>land(true)};
+  return finished;
+}
+$('skip').onclick=()=>introRun?.skip();
+addEventListener('keydown',e=>{if(e.key==='Escape'&&introRun){e.preventDefault();introRun.skip()}});
+$('replay').onclick=()=>{scrollTo({top:0});playIntro()};
+motion.addEventListener('change',()=>{scene?.setInstant(motion.matches);if(motion.matches)introRun?.skip();$('replay').hidden=motion.matches});
+
+sceneReady.then(ok=>{
+  $('replay').hidden=!ok||motion.matches;
+  let seen=false;try{seen=sessionStorage.getItem('cg-intro')==='seen';sessionStorage.setItem('cg-intro','seen')}catch{}
+  if(ok&&!seen&&!location.hash)playIntro();
+});
+
+// ---------- Live proof: the backend's headless agent battle ----------
+const API=(new URLSearchParams(location.search).get('api')||'').replace(/\/$/,'');
+let apiUp=false,socket=null;
+const live=(id,t)=>$(id).textContent=t;
+function liveFor(){
+  const fx=FIXTURES[state.caseIndex];
+  $('live-run').disabled=!apiUp||!fx.sandbox;
+  if(!apiUp)return;
+  live('live-status',fx.sandbox?`Runs the ${fx.name.toLowerCase()} trap on a cached page. No live site is touched.`:'The control case has no trap page to run.');
+}
+listeners.add((()=>{let last=-1;return s=>{if(s.caseIndex!==last){last=s.caseIndex;socket?.close();$('lanes').hidden=true;liveFor()}}})());
+fetch(API+'/api/health').then(r=>r.ok?r.json():Promise.reject()).then(()=>{apiUp=true;liveFor()})
+  .catch(()=>live('live-status','The live agent needs the CoercionGuard API. Start the backend, then reload this page.'));
+$('live-run').onclick=async()=>{
+  const fx=FIXTURES[state.caseIndex];if(!fx.sandbox)return;
+  $('live-run').disabled=true;$('lanes').hidden=false;
+  for(const k of ['u','p']){$(k+'-shot').removeAttribute('src');$(k+'-log').replaceChildren();live(k+'-state','Loading page');$(k+'-state').dataset.state=''}
+  live('live-status','Starting the agent…');
+  try{
+    const res=await fetch(API+'/api/battles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sandbox_id:fx.sandbox})});
+    if(!res.ok)throw new Error(`The API answered ${res.status}`);
+    const b=await res.json();
+    socket=new WebSocket((API||location.origin).replace(/^http/,'ws')+b.ws);
+    socket.onmessage=m=>{
+      const e=JSON.parse(m.data),k={unprotected:'u',protected:'p'}[e.lane];
+      if(e.screenshot&&k&&(e.type==='page_loaded'||e.type==='sanitized'))$(k+'-shot').src='data:image/jpeg;base64,'+e.screenshot;
+      if(e.type==='battle_started')live('live-status','Agent running…');
+      if(e.type==='sanitized')live('p-state',`Rewrote ${e.fixes.length} elements`);
+      if(e.type==='step')$(k+'-log').append(el('li',{textContent:e.decision.reason}));
+      if(e.type==='lane_finished'){live(k+'-state',e.manipulated?'Manipulated':'Met the instruction');$(k+'-state').dataset.state=e.manipulated?'fail':'pass'}
+      if(e.type==='battle_finished'){const u=e.results.unprotected?.receipt,p=e.results.protected?.receipt;
+        const saved=(u?.overcharge??0)-(p?.overcharge??0);
+        live('live-status',saved>0?`CoercionGuard saved ${usd(Math.round(saved*100))}${u.monthly_recurring?' over a year':''}.`:p?.goal_met?'CoercionGuard kept the agent within your instruction.':'Run finished.');
+        $('live-run').disabled=false}
+      if(e.type==='error'){live('live-status','The run failed: '+e.message);$('live-run').disabled=false}
+    };
+    socket.onerror=()=>{live('live-status','Lost the connection to the agent. Run it again.');$('live-run').disabled=false};
+  }catch(err){live('live-status',`Could not start the agent: ${err.message}`);$('live-run').disabled=false}
+};
+</script>
+</body>
+</html>
