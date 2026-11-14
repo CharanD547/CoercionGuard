@@ -13,6 +13,7 @@
       <figcaption>Agent with CoercionGuard <b id="p-state"></b></figcaption>
       <div class="shot"><img id="p-shot" alt="The same page after CoercionGuard rewrote it"><div class="marks" id="p-marks" hidden></div></div>
       <div class="lane-tools"><button type="button" id="p-found" aria-pressed="false">As found</button><button type="button" id="p-latest" aria-pressed="true">Latest</button><p class="receipt" id="p-receipt"></p></div>
+      <div class="lane-changes" id="p-changes" hidden><p>What CoercionGuard changed on this page</p><ul></ul></div>
       <ol id="p-log"></ol>
     </figure>
   </div>
@@ -21,4 +22,110 @@
     <p id="risk-line"></p>
     <ol id="finding-list"></ol>
   </section>
+
+  <section id="page-review" class="pr" aria-labelledby="pr-title">
+    <h2 id="pr-title">Test a live page</h2>
+    <p class="pr-lede">Paste a public pricing, trial, checkout or consent page and say what you want to avoid. Run both agents on the real page, or try its choices yourself. CoercionGuard stops every submit, so nothing is ever sent to the site.</p>
+    <form id="pr-form" class="pr-form" novalidate>
+      <label for="pr-url">Page address</label>
+      <input id="pr-url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/pricing" required>
+      <p class="pr-alt" id="pr-alt">Site blocks us or needs you to sign in? <label class="pr-upload">Upload a saved page<input id="pr-file" type="file" accept=".html,.htm,text/html"></label></p>
+      <p class="pr-file-chip" id="pr-file-chip" hidden><span id="pr-file-name"></span> <button type="button" id="pr-file-clear">Use an address instead</button></p>
+      <label for="pr-goal">What do you want to avoid?</label>
+      <input id="pr-goal" type="text" maxlength="500" placeholder="No automatic renewal, no extras, don't share my data" required>
+      <div class="pr-chips" id="pr-chips" aria-label="Common goals">
+        <button type="button">No automatic renewal</button>
+        <button type="button">Pay monthly, no annual commitment</button>
+        <button type="button">No add-ons or extras</button>
+        <button type="button">Don't share my data with partners</button>
+      </div>
+      <div class="pr-row">
+        <button id="pr-agents" class="pr-primary" type="button">Run both agents on this page</button>
+        <button id="pr-capture" class="pr-ghost" type="submit">Try its choices myself</button>
+        <p id="pr-status" class="pr-status" role="status"></p>
+      </div>
+      <p class="pr-try">Or try <button type="button" data-url="https://www.dropbox.com/plans" data-goal="Pay monthly, no annual commitment, no automatic renewal">dropbox.com/plans</button> or <button type="button" data-url="https://www.notion.com/pricing" data-goal="Pay monthly, no annual commitment">notion.com/pricing</button></p>
+      <p id="pr-error" class="pr-error" role="alert" hidden></p>
+      <div id="pr-fallback" class="pr-fallback" role="alert" hidden>
+        <p class="pr-fallback-title">We couldn't use this page</p>
+        <p id="pr-fallback-reason"></p>
+        <p>Save it in your own browser and upload it instead:</p>
+        <ol>
+          <li>Open the page in Chrome. Get past any check, or sign in.</li>
+          <li>Press Cmd+S (Ctrl+S on Windows) and choose “Webpage, Complete”.</li>
+          <li>Upload the .html file here. We'll run it straight away.</li>
+        </ol>
+        <label class="pr-primary pr-upload-btn">Upload a saved page<input id="pr-file-2" type="file" accept=".html,.htm,text/html"></label>
+        <p id="pr-archive-text" class="pr-archive-text" hidden></p>
+        <button id="pr-archive-use" class="pr-ghost" type="button" hidden>Use the archived copy instead</button>
+      </div>
+    </form>
+
+    <div id="pr-work" class="pr-work" hidden>
+      <header class="pr-head">
+        <h3 id="pr-page" tabindex="-1"></h3>
+        <p class="pr-meta"><a id="pr-link" target="_blank" rel="noopener noreferrer"></a><span id="pr-expiry"></span></p>
+        <ul id="pr-notes" class="pr-notes"></ul>
+      </header>
+      <div class="pr-choices">
+        <h4>Try the page's choices</h4>
+        <div id="pr-controls"></div>
+        <div id="pr-price" class="pr-price" aria-live="polite"></div>
+        <div class="pr-row">
+          <button id="pr-check" class="pr-primary" type="button">Check these choices</button>
+          <button id="pr-reset" class="pr-ghost" type="button">Reset to page defaults</button>
+        </div>
+        <p id="pr-work-status" class="pr-status" role="status"></p>
+      </div>
+      <figure class="pr-shot">
+        <figcaption>The original page, as captured. It stays untouched.</figcaption>
+        <div class="pr-frame"><img id="pr-shot" alt=""></div>
+      </figure>
+
+      <section id="pr-verdict" class="pr-verdict" hidden aria-labelledby="pr-verdict-title">
+        <div class="pr-verdict-head"><h4 id="pr-verdict-title" tabindex="-1">What we found</h4><p id="pr-stamp" class="pr-stamp"></p></div>
+        <p id="pr-stale" class="pr-stale" hidden>Your choices changed since this check. Check them again to update it.</p>
+        <ol id="pr-conflicts" class="pr-conflicts"></ol>
+        <details id="pr-unverified" class="pr-unverified" hidden><summary></summary><ul></ul></details>
+        <p id="pr-rec" class="pr-rec"></p>
+        <p id="pr-next" class="pr-next"></p>
+        <p id="pr-engine" class="pr-engine"></p>
+      </section>
+
+      <section id="pr-remind" class="pr-remind" hidden aria-labelledby="pr-remind-title">
+        <h4 id="pr-remind-title">Set a renewal reminder</h4>
+        <blockquote id="pr-remind-quote" class="pr-quote"></blockquote>
+        <form id="pr-remind-form" class="pr-remind-form" novalidate>
+          <label>Trial ends<input id="pr-trial-end" type="date" required></label>
+          <label>Time zone<select id="pr-tz"></select></label>
+          <label>Remind me<select id="pr-days">
+            <option value="0">On the day</option><option value="1">1 day before</option>
+            <option value="2" selected>2 days before</option><option value="3">3 days before</option><option value="7">A week before</option>
+          </select></label>
+          <button class="pr-ghost" type="submit">Preview reminder</button>
+        </form>
+        <p id="pr-remind-hint" class="pr-help"></p>
+        <p id="pr-remind-error" class="pr-error" role="alert" hidden></p>
+        <div id="pr-event" class="pr-event" hidden>
+          <p id="pr-event-when" class="pr-event-when"></p>
+          <p id="pr-event-title" class="pr-event-title"></p>
+          <p id="pr-event-desc" class="pr-event-desc"></p>
+          <div class="pr-row">
+            <a id="pr-ics" class="pr-primary" download="trial-reminder.ics">Download .ics</a>
+            <details class="pr-operator">
+              <summary>Demo operator</summary>
+              <form id="pr-approve">
+                <label for="pr-token">Operator token</label>
+                <input id="pr-token" type="password" autocomplete="off" required>
+                <button class="pr-ghost" type="submit">Add to team calendar</button>
+              </form>
+            </details>
+          </div>
+          <p id="pr-approved" class="pr-status" role="status"></p>
+        </div>
+      </section>
+    </div>
+  </section>
 </section>
+
+<script>import "../scripts/page-review.js";</script>

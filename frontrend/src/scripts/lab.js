@@ -306,12 +306,22 @@ function takeFindings(e,prefer){
 function renderReceipt(id,receipt){
   const node=$(id);
   if(!receipt){node.textContent='';return}
+  if(receipt.summary){node.textContent=receipt.summary;return}  // live pages: what the agent chose
   const bits=[dollars(receipt.one_time)+' now'];
   if(receipt.monthly_recurring)bits.push(dollars(receipt.monthly_recurring)+'/mo');
   const leaks=receipt.privacy_leaks||[];
   if(leaks.length===1)bits.push(leaks[0]);
   else if(leaks.length)bits.push(leaks.length+' privacy leaks');
+  if(receipt.note)bits.push(receipt.note);
   node.textContent=bits.join(' · ');
+}
+// Spell out what CoercionGuard changed for the protected agent: instruction fixes first, then rewrites.
+function showChanges(fixes){
+  const box=$('p-changes'),seen=new Set();
+  const items=[...fixes.filter(f=>f.type==='goal'),...fixes.filter(f=>f.type!=='goal')]
+    .map(f=>f.action).filter(a=>a&&!seen.has(a)&&seen.add(a));
+  box.querySelector('ul').replaceChildren(...items.map(a=>el('li',{textContent:a})));
+  box.hidden=!items.length;
 }
 for(const k of ['u','p']){
   $(k+'-found').onclick=()=>{shots[k].view='found';showShot(k)};
@@ -330,17 +340,25 @@ listeners.add(s=>{
 fetch(API+'/api/health').then(r=>r.ok?r.json():Promise.reject()).then(()=>{apiUp=true;liveFor()})
   .catch(()=>live('live-status','The live agent needs the CoercionGuard API. Start the backend, then reload this page.'));
 fetch(API+'/api/patterns').then(r=>r.ok?r.json():Promise.reject()).then(data=>{CATALOG=data;if(state.result)render()}).catch(()=>{});
-$('live-run').onclick=async()=>{
-  const fx=FIXTURES[state.caseIndex];if(!fx.sandbox)return;
+$('live-run').onclick=()=>{const fx=FIXTURES[state.caseIndex];if(fx.sandbox)startBattle({sandbox_id:fx.sandbox})};
+// The live-page form below asks for the same comparison on a real URL.
+document.addEventListener('cg-live-battle',e=>{
+  if(!apiUp)return;
+  startBattle(e.detail);  // {url, goal} for a live page, {page_id, goal} for an uploaded copy
+  $('lanes').scrollIntoView({behavior:'smooth',block:'start'});
+});
+const battleDone=(error=null)=>document.dispatchEvent(new CustomEvent('cg-battle-done',{detail:{error}}));
+async function startBattle(body){
   const version=++runVersion;
   $('live-run').disabled=true;$('lanes').hidden=false;$('pattern-report').hidden=true;
   trapFindings=[];trapViewport=null;activeMark='';
   shots.u={found:'',latest:'',view:'latest'};shots.p={found:'',latest:'',view:'latest'};
   for(const k of ['u','p']){$(k+'-log').replaceChildren();$(k+'-receipt').textContent='';$(k+'-marks').replaceChildren();live(k+'-state','Loading page');$(k+'-state').dataset.state='';showShot(k)}
   live('live-status','Starting the agent…');live('risk-line','');$('finding-list').replaceChildren();
+  $('p-changes').hidden=true;
   try{
-    const res=await fetch(API+'/api/battles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sandbox_id:fx.sandbox})});
-    if(!res.ok)throw new Error(`The API answered ${res.status}`);
+    const res=await fetch(API+'/api/battles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok){const d=(await res.json().catch(()=>({}))).detail;throw new Error(typeof d==='string'?d:`The API answered ${res.status}`)}
     const b=await res.json();
     if(version!==runVersion)return;
     socket=new WebSocket((API||location.origin).replace(/^http/,'ws')+b.ws);
@@ -349,31 +367,32 @@ $('live-run').onclick=async()=>{
       const e=JSON.parse(m.data),k={unprotected:'u',protected:'p'}[e.lane];
       if(e.type==='page_loaded'&&k)rememberShot(k,e.screenshot,{found:true});
       if(e.type==='detected')takeFindings(e,false);
-      if(e.type==='sanitized'&&k){rememberShot(k,e.screenshot);takeFindings(e,true);live('p-state',`Rewrote ${e.fixes.length} elements`)}
+      if(e.type==='sanitized'&&k){rememberShot(k,e.screenshot);takeFindings(e,true);live('p-state',`Rewrote ${e.fixes.length} elements`);showChanges(e.fixes)}
       if(e.type==='battle_started')live('live-status','Agent running. '+e.goal);
       if(e.type==='step'&&k){rememberShot(k,e.screenshot);$(k+'-log').append(el('li',{textContent:e.decision.reason+(e.decision.error?' — '+e.decision.error:'')}))}
       if(e.type==='lane_finished'&&k){
         live(k+'-state',e.error?'Failed':e.manipulated?'Manipulated':'Met the instruction');
         $(k+'-state').dataset.state=e.error||e.manipulated?'fail':'pass';
         renderReceipt(k+'-receipt',e.receipt);
+        if(e.error)$(k+'-receipt').textContent=e.error;
       }
       if(e.type==='battle_finished'){
         const c=e.results.comparison||{},saved=c.overcharge_avoided||0,leaks=(c.leaks_avoided||[]).length,parts=[];
         if(saved>0)parts.push(`kept ${dollars(saved)} from being added`+(e.results.unprotected?.receipt?.monthly_recurring?' over a year':''));
         if(leaks)parts.push(`blocked ${leaks} privacy leak${leaks===1?'':'s'}`);
-        live('live-status',parts.length?`CoercionGuard ${parts.join(' and ')}.`:c.protected_met_goal?'CoercionGuard kept the agent within the instruction.':e.status==='error'?'The run failed before either agent finished.':'Run finished.');
-        $('live-run').disabled=false;
+        live('live-status',parts.length?`CoercionGuard ${parts.join(' and ')}.`:c.protected_met_goal?'CoercionGuard kept the agent within the instruction.':e.status==='error'?(e.results.unprotected?.error||e.results.protected?.error||'The run failed before either agent finished.'):'Run finished.');
+        $('live-run').disabled=false;battleDone(e.status==='error'?$('live-status').textContent:null);
       }
-      if(e.type==='error'){live('live-status','The run failed: '+e.message);$('live-run').disabled=false}
+      if(e.type==='error'){live('live-status','The run failed: '+e.message);$('live-run').disabled=false;battleDone(e.message)}
     };
     socket.onclose=()=>{
       if(version!==runVersion||!$('live-run').disabled)return;
       live('live-status','Lost the connection to the agent. Run it again.');
-      $('live-run').disabled=false;
+      $('live-run').disabled=false;battleDone();
     };
   }catch(err){
     if(version!==runVersion)return;
     live('live-status',`Could not start the agent: ${err.message}`);
-    $('live-run').disabled=false;
+    $('live-run').disabled=false;battleDone();
   }
-};
+}
