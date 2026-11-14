@@ -27,6 +27,11 @@ MARKETING = re.compile(r"(newsletter|marketing|partner|third[- ]part|offers|prom
 STRONG_RENEW = re.compile(r"(auto[- ]?renew|renews?|until (you )?cancel|recurring)", re.I)
 RECURRING_PRICE = re.compile(r"[$€£₹¥]\s?\d[\d,.]*\s*(/\s*(user\s*/\s*)?(mo|month|yr|year)\b|per (month|year)|a month|monthly)", re.I)
 ANNUAL = re.compile(r"\b(year|yearly|annual(ly)?|12[- ]month)\b", re.I)
+# A charge on top of the stated price: a named fee, or a price that rises later.
+FEE_TERM = re.compile(r"(\bfees?\b|surcharge|administrative charge|royalty|service charge|price (will )?(go|goes) up"
+                      r"|will increase|increases? (to|by)|regular (rate|price)|standard rates?)", re.I)
+NO_FEE = re.compile(r"\b(no|without|zero|no more|goodbye to|eliminat\w*)\b[^.]{0,30}\bfees?\b|fee[- ]free|fees? (are )?(waived|extinct)", re.I)
+MONEY = re.compile(r"[$€£₹¥]\s?\d|taxes (and|&) fees", re.I)
 TRIAL = re.compile(r"(\d{1,3})[- ]?(day|week|month)s?\b[^.]{0,30}\btrial|trial[^.]{0,30}?\b(\d{1,3})[- ]?(day|week|month)s?\b", re.I)
 
 
@@ -39,7 +44,27 @@ def _sources(review: Review) -> dict[str, dict]:
     out = {"page": {"url": review.capture["url"], "lines": review.capture["lines"]}}
     if review.linked:
         out["linked"] = {"url": review.linked["url"], "lines": review.linked["lines"]}
+    if review.capture.get("hidden"):  # uploaded pages: text that is in the page but not shown
+        out["hidden"] = {"url": review.capture["url"], "lines": [h["text"] for h in review.capture["hidden"]],
+                         "where": [h["where"] for h in review.capture["hidden"]]}
     return out
+
+
+def fee_terms(capture: dict) -> list[dict]:
+    """Charges beyond the stated price on an uploaded page, shown or hidden, with where they were."""
+    found = [{"text": l, "where": None} for l in capture["lines"]] + list(capture.get("hidden") or [])
+    out, seen = [], set()
+    for item in found:
+        line = item["text"]
+        m = FEE_TERM.search(line)
+        if not m or not MONEY.search(line) or NO_FEE.search(line) or len(line) < 15:
+            continue
+        excerpt = _window(line, m)
+        if excerpt in seen:
+            continue
+        seen.add(excerpt)
+        out.append({"excerpt": excerpt, "source": "hidden" if item["where"] else "page", "where": item["where"]})
+    return sorted(out, key=lambda f: f["source"] != "hidden")[:5]  # hidden ones first: they're the trick
 
 
 def verify(excerpt: str, source: str, review: Review) -> dict | None:
@@ -54,7 +79,10 @@ def verify(excerpt: str, source: str, review: Review) -> dict | None:
         labels = [c["label"] for c in review.capture["controls"]] + [o["label"] for c in review.capture["controls"] for o in c.get("options") or []]
         haystack = _norm(" \n ".join(srcs[name]["lines"] + labels if name == "page" else srcs[name]["lines"]))
         if _norm(excerpt) in haystack:
-            return {"excerpt": excerpt.strip(), "source": name, "url": srcs[name]["url"]}
+            found = {"excerpt": excerpt.strip(), "source": name, "url": srcs[name]["url"]}
+            if name == "hidden":
+                found["where"] = next((w for l, w in zip(srcs[name]["lines"], srcs[name]["where"]) if _norm(excerpt) in _norm(l)), None)
+            return found
     return None
 
 
@@ -82,6 +110,7 @@ def _intents(goal: str) -> dict:
         "data": bool(re.search(r"(shar|data|marketing|newsletter|partner|privacy|tracking|personal|spam|email)", g)),
         "limit": parse_price(limit.group(3)) if limit else None,
         "no_annual": bool(re.search(r"(no (annual|yearly|year-long)|pay monthly|monthly billing|month[- ]to[- ]month)", g)),
+        "fees": bool(re.search(r"(\bfees?\b|surcharge|hidden (cost|charge)|stated (monthly )?price|only pay|all[- ]in|total price|charges? more)", g)),
     }
 
 
@@ -139,12 +168,20 @@ def rules_assess(review: Review) -> dict:
         conflicts.append({"control_id": None, "issue": f"The total is above your limit of {limit['text'].strip()}.",
                           "excerpt": totals["default_total"]["text"], "source": "page"})
 
+    if want["fees"] and review.capture.get("hidden") is not None:  # uploaded pages
+        for f in fee_terms(review.capture)[:3]:
+            issue = (f"Hidden in a {f['where']}: a charge on top of the stated price." if f["source"] == "hidden"
+                     else "The page adds a charge on top of the stated price.")
+            conflicts.append({"control_id": None, "issue": issue, "excerpt": f["excerpt"], "source": f["source"]})
+
     issues = [c["issue"] for c in conflicts]
     if not conflicts:
         rec = "The captured terms did not show a conflict with your goal."
     else:
         rec = "Before you continue: " + " ".join(dict.fromkeys(issues))
-    if renewal and want["recurring"]:
+    if want["fees"] and any("charge on top of the stated price" in c["issue"] for c in conflicts):
+        step = "Ask for the full price with every fee included before you agree."
+    elif renewal and want["recurring"]:
         step = "Set a reminder for a couple of days before the trial ends, then cancel if you don't want to keep it."
     elif any(c["control_id"] for c in conflicts):
         step = "Untick the flagged choices in this review, then check them again."
@@ -186,6 +223,8 @@ def _payload(review: Review, can_fetch: bool) -> str:
             "links": [l["href"] for l in review.capture["links"]], "can_fetch": can_fetch}
     if review.linked:
         data["evidence_linked"] = pick(review.linked["lines"], 160)
+    if review.capture.get("hidden"):
+        data["evidence_hidden_on_page"] = pick([h["text"] for h in review.capture["hidden"]], 120)
     return json.dumps(data)[:60_000]
 
 

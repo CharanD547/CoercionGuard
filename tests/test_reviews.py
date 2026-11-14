@@ -62,6 +62,12 @@ PAGES = {
 <button aria-label="Show annual billing prices: Annual selected"><div aria-hidden="true"><span>Monthly</span><span>Annual</span></div></button>
 <p>Professional $192/year per seat</p>
 <a href="/checkout" class="btn" style="display:inline-block;padding:16px 40px">Get started</a>""",
+    "/hiddenfee": """<title>FitClub membership</title><h1>FitClub Classic</h1>
+<p>Only $15/month. Cancel anytime.</p>
+<details><summary>Terms apply</summary><p>A $49 annual fee is charged each year in addition to the monthly dues.</p></details>
+<span role="tooltip" style="display:none">Plus a $12 start-up fee at sign-up.</span>
+<p>No hidden fees, ever.</p>
+<form action="/join" method="post"><button type=submit style="font-size:22px;padding:18px 60px">Join now</button></form>""",
     "/trial": """<title>Acme Plus trial</title><h1>Try Acme Plus</h1>
 <p>After your 14-day free trial, Acme Plus renews automatically at $12.99/month until you cancel.</p>
 <form action="/submit" method="post">
@@ -455,3 +461,55 @@ def test_pay_monthly_goal_accepts_monthly_choice(client, site):
     at_default = client.post(f"/api/reviews/{rv['id']}/check", json={}).json()["assessment"]
     after = client.post(f"/api/reviews/{rv['id']}/check", json={"selections": {ctl["id"]: monthly}}).json()["assessment"]
     assert at_default["verdict"] == "conflicts" and after["verdict"] == "fits_goal", after["conflicts"]
+
+
+FEE_GOAL = "Only pay the stated monthly price, no extra fees"
+
+
+def upload_fixture(client, path):
+    html = f"<!doctype html><html><head>{PAGES[path].split('</title>', 1)[0]}</title></head><body>{PAGES[path].split('</title>', 1)[1]}</body></html>"
+    up = client.post("/api/pages", files={"file": ("saved.html", html.encode(), "text/html")})
+    assert up.status_code == 201, up.text
+    return up.json()["page_id"]
+
+
+def test_uploaded_page_finds_fees_hidden_in_collapsed_sections_and_tooltips(client, site):
+    pid = upload_fixture(client, "/hiddenfee")
+    rv = client.post("/api/reviews", json={"page_id": pid, "goal": FEE_GOAL}).json()
+    a = client.post(f"/api/reviews/{rv['id']}/check", json={}).json()["assessment"]
+    issues = {c["issue"]: c["evidence"] for c in a["conflicts"]}
+    folded = next(e for i, e in issues.items() if "collapsed section “Terms apply”" in i)
+    assert "$49 annual fee" in folded["excerpt"] and folded["source"] == "hidden" and folded["where"] == "collapsed section “Terms apply”"
+    assert any("tooltip" in i and "$12 start-up fee" in e["excerpt"] for i, e in issues.items())
+    assert not any("No hidden fees" in e["excerpt"] for e in issues.values())
+    assert "full price" in a["next_step"] and a["verdict"] == "conflicts"
+
+
+def test_live_pages_are_unchanged_by_hidden_text_reading(client, site):
+    rv = review(client, site + "/hiddenfee", goal=FEE_GOAL)
+    a = client.post(f"/api/reviews/{rv['id']}/check", json={}).json()["assessment"]
+    assert not any("$49 annual fee" in c["evidence"]["excerpt"] for c in a["conflicts"])
+
+
+def test_uploaded_page_battle_stops_the_protected_agent_on_hidden_fees(client, site):
+    Site.posts = 0
+    pid = upload_fixture(client, "/hiddenfee")
+    e = run_battle(client, {"page_id": pid, "goal": FEE_GOAL})
+    alone, guarded = e["results"]["unprotected"], e["results"]["protected"]
+    assert alone["manipulated"] and alone["receipt"]["committed"]
+    assert any("$49 annual fee" in c and "collapsed section" in c for c in alone["receipt"]["conflicts"])
+    assert not guarded["manipulated"] and not guarded["receipt"]["committed"]
+    assert guarded["receipt"]["summary"].startswith("Stopped before agreeing")
+    assert Site.posts == 0
+
+
+def test_uploaded_page_reveals_hidden_fees_even_when_the_goal_allows_them(client, site):
+    pid = upload_fixture(client, "/hiddenfee")
+    b = client.post("/api/battles", json={"page_id": pid, "goal": "Pay monthly, no annual commitment"}).json()
+    with client.websocket_connect(b["ws"]) as ws:
+        events = []
+        while (ev := ws.receive_json())["type"] != "battle_finished":
+            events.append(ev)
+    fixes = [f["action"] for ev in events if ev["type"] == "sanitized" for f in ev["fixes"]]
+    assert any(a.startswith("Revealed text hidden in a collapsed section") and "$49 annual fee" in a for a in fixes)
+    assert ev["results"]["protected"]["receipt"]["committed"]  # not a fee goal, so the agent carries on

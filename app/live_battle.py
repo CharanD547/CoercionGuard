@@ -9,13 +9,14 @@ and blocked. Each agent's final choices are then scored against the user's goal.
 
 import asyncio
 import logging
+import re
 from contextlib import suppress
 from urllib.parse import urlsplit
 
 from playwright.async_api import Route
 
 from . import agent, uploads
-from .analyst import MARKETING, _intents, rules_assess
+from .analyst import MARKETING, _intents, fee_terms, rules_assess
 from .browser import detect, pool, sanitize, screenshot_b64
 from .capture import CAPTURE_JS, _guard
 from .config import get_settings
@@ -132,6 +133,24 @@ SET_JS = """([kind, id, opt]) => {
 }"""
 
 
+# Uploaded pages: put text the page hides (collapsed sections, tooltips) where the agent and the user see it.
+REVEAL_JS = """(items) => {
+  const box = document.createElement("div");
+  box.dataset.cgBanner = "1";
+  box.style.cssText = "position:relative;z-index:2147483646;margin:0;padding:12px 16px;background:#fff3cd;color:#5c3b00;border-bottom:3px solid #b3243f;font:600 14px/1.45 system-ui";
+  const title = document.createElement("div");
+  title.textContent = "⚠ CoercionGuard found terms hidden on this page:";
+  box.append(title);
+  for (const it of items) {
+    const row = document.createElement("div");
+    row.style.cssText = "font-weight:500;margin-top:4px";
+    row.textContent = `“${it.excerpt}” (hidden in a ${it.where})`;
+    box.append(row);
+  }
+  document.body.prepend(box);
+}"""
+
+
 def _as_review(goal: str, snapshot: dict) -> Review:
     cap = {"controls": snapshot["controls"], "prices": snapshot["prices"], "lines": snapshot["lines"], "url": snapshot["url"],
            "title": snapshot["title"], "links": [], "findings": [], "notes": [], "status": "ok", "screenshot": None}
@@ -237,7 +256,11 @@ async def run_live_lane(b, lane: str) -> dict:
         ctx.on("page", lambda p: None if p == page else asyncio.ensure_future(p.close()))  # no popups
         await page.goto(b.url, wait_until="domcontentloaded")
         await page.wait_for_timeout(1800)
-        start = await page.evaluate(CAPTURE_JS)
+        start = await page.evaluate(CAPTURE_JS, {"hidden": budget["saved"]})
+        # Uploaded pages only: charges beyond the stated price, including ones the page hides.
+        fees = fee_terms(start) if budget["saved"] else []
+        hidden_fees = [f for f in fees if f["source"] == "hidden"]
+        blocks_fees = bool(fees) and _intents(b.goal)["fees"]
         # Same checks as a capture: a bot check or a sign-in wall isn't the page the user meant,
         # so stop instead of letting an agent "pass" on it.
         sig = start.get("signals") or {}
@@ -257,6 +280,10 @@ async def run_live_lane(b, lane: str) -> dict:
             state["guarding"] = True
             try:
                 fixes += await enforce_goal(page, b.goal)
+                if hidden_fees:
+                    await page.evaluate(REVEAL_JS, hidden_fees)
+                    fixes += [{"type": "reveal", "action": f"Revealed text hidden in a {f['where']}: “{f['excerpt'][:110]}”"}
+                              for f in hidden_fees]
                 await page.wait_for_timeout(600)
             finally:
                 state["guarding"] = False
@@ -266,6 +293,19 @@ async def run_live_lane(b, lane: str) -> dict:
         else:
             b.emit({"type": "detected", "lane": lane, "findings": findings, "risk_score": risk_score(findings),
                     "summary": summarize(findings), "viewport": report.get("viewport")})
+
+        if lane == "protected" and blocks_fees:
+            # The instruction rules out extra charges and the page has one: don't let the agent agree.
+            fee = fees[0]
+            where = f" (hidden in a {fee['where']})" if fee["where"] else ""
+            b.emit({"type": "step", "lane": lane, "step": 1, "screenshot": await screenshot_b64(page), "decision": {
+                "action": "done", "reason": f"CoercionGuard stopped the agent before agreeing: the page charges more than the stated price{where}."}})
+            receipt = score_lane(b.goal, start, start, None, None)
+            receipt.update({"goal_met": True, "conflicts": [], "committed": False,
+                            "note": f"Stopped before agreeing: “{fee['excerpt'][:120]}”{where}.",
+                            "summary": f"Stopped before agreeing · “{fee['excerpt'][:80]}”"})
+            receipt["writes_blocked"] = state["writes_blocked"]
+            return {"receipt": receipt, "manipulated": False, "findings_count": len(findings), "fixes_count": len(fixes)}
 
         clicked, before, last_id = None, None, None
         for step in range(1, s.agent_max_steps + 1):
@@ -299,6 +339,12 @@ async def run_live_lane(b, lane: str) -> dict:
 
         end = before if state["commit"] else await page.evaluate(CAPTURE_JS)
         receipt = score_lane(b.goal, start, end, clicked, state["commit"])
+        # It went ahead if a submit was stopped or it pressed a sign-up style button.
+        if blocks_fees and (state["commit"] or (clicked and agent.CTA.search(clicked) and not re.search(r"without|cookie|close", clicked, re.I))):
+            fee = fees[0]
+            where = f", hidden in a {fee['where']}" if fee["where"] else ""
+            receipt["conflicts"].append(f"Agreed to a plan with a charge on top of the stated price: “{fee['excerpt'][:110]}”{where}.")
+            receipt["goal_met"] = False
         receipt["writes_blocked"] = state["writes_blocked"]
         return {"receipt": receipt, "manipulated": not receipt["goal_met"],
                 "findings_count": len(findings), "fixes_count": len(fixes)}

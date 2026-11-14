@@ -1,6 +1,7 @@
 // Runs inside a captured page. Reads only: returns visible text, choice controls with their
 // default state, price labels and links to pricing/terms pages. Never clicks or submits.
-() => {
+// With { hidden: true } (uploaded pages), it also returns text that is in the page but not shown.
+(opts) => {
   const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
   const visible = (el) => {
     const s = getComputedStyle(el), r = el.getBoundingClientRect();
@@ -195,6 +196,45 @@
     if (links.length >= 20) break;
   }
 
+  // Text in the page but not shown: collapsed sections, tooltips, closed pop-ups. A saved page
+  // still carries it, and that is often where a fee or renewal term is tucked away.
+  const hidden = [];
+  if (opts && opts.hidden && document.body) {
+    const shownEl = (el) => {
+      // A closed <details> still lays out its content, so ask the browser and check that case directly.
+      if (el.closest("details:not([open])") && !el.closest("summary")) return false;
+      if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true, contentVisibilityAuto: true })) return false;
+      const st = getComputedStyle(el), r = el.getBoundingClientRect();
+      return st.display !== "none" && st.visibility !== "hidden" && parseFloat(st.opacity) > 0.05 && r.width > 1 && r.height > 1;
+    };
+    const whereOf = (el) => {
+      const d = el.closest("details:not([open])");
+      if (d) {
+        const s = d.querySelector("summary");
+        return "collapsed section" + (s ? ` “${clean(s.innerText).slice(0, 60)}”` : "");
+      }
+      if (el.closest("[role=tooltip], [class*=tooltip i]")) return "tooltip";
+      if (el.closest("[role=dialog], dialog, [class*=modal i]")) return "closed pop-up";
+      if (el.closest("[class*=accordion i], [class*=collapse i], [aria-hidden=true]")) return "collapsed section";
+      return "hidden part of the page";
+    };
+    const shownLines = new Set(lines);
+    const seenHidden = new Set();
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node && hidden.length < 300; node = walker.nextNode()) {
+      const parent = node.parentElement;
+      if (!parent || parent.closest("script, style, noscript, template, svg, [data-cg-banner]")) continue;
+      const own = clean(node.textContent);
+      if (own.length < 12 || !/[a-z]/i.test(own) || shownEl(parent)) continue;
+      const block = parent.closest("p, li, td, dd, dt, h1, h2, h3, h4, h5, h6, label, div, section") || parent;
+      const whole = clean(block.textContent);
+      const t = (whole.length <= 300 ? whole : own).slice(0, 500);
+      if (seenHidden.has(t) || shownLines.has(t)) continue;
+      seenHidden.add(t);
+      hidden.push({ text: t, where: whereOf(parent) });
+    }
+  }
+
   const bodyText = (document.title + " " + (document.body ? document.body.innerText.slice(0, 3000) : "")).toLowerCase();
   const passwordField = [...document.querySelectorAll("input[type=password]")].some(visible);
   return {
@@ -204,6 +244,7 @@
     controls,
     prices,
     links,
+    hidden: opts && opts.hidden ? hidden : undefined,
     signals: {
       login: passwordField || /\b(sign in|log in) to (continue|view|see)\b/.test(bodyText),
       blocked: /just a moment|attention required|verify you are human|are you a robot|access denied|captcha/.test(bodyText)

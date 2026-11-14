@@ -101,7 +101,7 @@ async def capture_page(url: str, *, with_screenshot: bool = True) -> dict:
                 raise CaptureError("blocked", f"The site refused the capture (HTTP {resp.status}).")
             if resp is not None and resp.status >= 400:
                 raise CaptureError("unreachable", f"The site answered HTTP {resp.status}.")
-            data = await page.evaluate(CAPTURE_JS)
+            data = await page.evaluate(CAPTURE_JS, {"hidden": bool(saved)})
             report = await detect(page)
             data["findings"] = report["findings"]
             data["screenshot"] = (base64.b64encode(await page.screenshot(type="jpeg", quality=70)).decode()
