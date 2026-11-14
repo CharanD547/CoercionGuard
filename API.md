@@ -1,6 +1,6 @@
 # CoercionGuard API reference
 
-Use `http://127.0.0.1:8001` locally or your deployment’s HTTPS origin. FastAPI serves interactive documentation at `/docs` and the machine-readable schema at `/openapi.json`. This reference also covers WebSocket events and response details outside the generated schema.
+Use `http://127.0.0.1:8000` locally or your deployment’s HTTPS origin. FastAPI serves interactive documentation at `/docs` and the machine-readable schema at `/openapi.json`. This reference also covers WebSocket events and response details outside the generated schema.
 
 ## Integration basics
 
@@ -16,7 +16,7 @@ Use `http://127.0.0.1:8001` locally or your deployment’s HTTPS origin. FastAPI
 Send the trusted policy separately from the exact proposed action. The app integrating the guard must derive the policy from user authorization and verify the proposal facts before calling the guard.
 
 ```sh
-curl -sS http://127.0.0.1:8001/api/v1/guard/check \
+curl -sS http://127.0.0.1:8000/api/v1/guard/check \
   -H 'Content-Type: application/json' \
   -d '{
     "policy": {

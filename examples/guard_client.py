@@ -29,7 +29,7 @@ def display_order_summary(proposal):
 
 
 if __name__ == "__main__":
-    base_url = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8001"
+    base_url = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
     policy = {"currency": "USD", "max_immediate_charge_minor": 4000,
               "allowed_recurring_intervals": [], "allowed_data_fields": []}
     with httpx.Client(base_url=base_url, timeout=5) as client:
