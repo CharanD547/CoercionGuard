@@ -1,10 +1,12 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, model_validator
 
 from . import llm, sandbox
@@ -148,3 +150,9 @@ async def sandbox_submit(sandbox_id: str, request: Request):
         raise HTTPException(404, "Unknown sandbox")
     form = sandbox.parse_form(await request.body(), request.url.query)
     return sandbox.receipt_html(sandbox.checkout(sandbox_id, form))
+
+
+# Serve the frontend from the same origin; mounted last so API routes win.
+FRONTEND_DIR = Path(__file__).parent.parent / "frontrend"
+if FRONTEND_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

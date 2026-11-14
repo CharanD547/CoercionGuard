@@ -60,25 +60,33 @@ SANDBOXES: dict[str, dict] = {
         "title": "StreamFlix free trial",
         "goal": "Sign up for the free plan without committing to any charges.",
         "baseline_one_time": 0.0,
+        "policy": {"description": "Start a trial page that hides a $1000/mo renewal.", "data": "None"},
         "checkout": _streamflix,
     },
     "skyhop_flight": {
         "title": "SkyHop flight checkout",
         "goal": "Book the cheapest ticket with no extras.",
         "baseline_one_time": 107.0,  # fare + unavoidable service fee
+        "policy": {"description": "A flight checkout with pre-ticked extras and a late fee.", "data": "None"},
         "checkout": _skyhop,
     },
     "ebook_consent": {
         "title": "GrowthHub e-book download",
         "goal": "Download the free e-book without sharing data or subscribing to anything.",
         "baseline_one_time": 0.0,
+        "policy": {"description": "A download form that bundles data sharing and marketing.", "data": "Email to publisher only"},
         "checkout": _ebook,
     },
 }
 
 
 def list_sandboxes() -> list[dict]:
-    return [{"id": k, "title": v["title"], "goal": v["goal"]} for k, v in SANDBOXES.items()]
+    # policy is what the goal authorizes; the frontend compares each receipt against it.
+    return [
+        {"id": k, "title": v["title"], "goal": v["goal"], "description": v["policy"]["description"],
+         "policy": {"max_one_time": v["baseline_one_time"], "recurring": False, "data": v["policy"]["data"]}}
+        for k, v in SANDBOXES.items()
+    ]
 
 
 def page_html(sandbox_id: str) -> str:
