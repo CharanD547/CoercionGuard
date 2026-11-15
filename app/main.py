@@ -61,6 +61,9 @@ async def no_store_reviews(request: Request, call_next):
     response = await call_next(request)
     if request.url.path.startswith("/api/reviews"):
         response.headers["Cache-Control"] = "no-store"  # reviews are private to whoever holds the ID
+    elif response.headers.get("content-type", "").startswith("text/html") and "Cache-Control" not in response.headers:
+        # Pages must be re-checked so a redeploy shows up; their hashed /_astro files can stay cached.
+        response.headers["Cache-Control"] = "no-cache"
     return response
 
 
