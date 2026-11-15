@@ -255,9 +255,8 @@ motion.addEventListener('change',()=>{
     if(opening){beats?.finish(true);beats=null;scene?.show(state,{snap:true})}
   }else if(opening)reveal();
 });
-let seen=false;
-try{seen=sessionStorage.getItem('cg-opening')==='seen';sessionStorage.setItem('cg-opening','seen')}catch{}
-setOpening(!seen&&!location.hash);
+// The opening plays on every visit; only a private review link (#review=…) goes straight to the lab.
+setOpening(!/^#review=/.test(location.hash));
 $('replay').hidden=false;
 if(opening)reveal();
 sceneReady.then(ok=>{if(ok&&opening&&!landing)reveal()});
